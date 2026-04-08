@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="UpgradeData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/upgrade_data.gd" id="1_ec7oc"]
+
+[resource]
+script = ExtResource("1_ec7oc")
+upgrade_id = "runtime_range"
+display_name = "Raggio Anticorpale"
+description = "Aumenta la distanza massima percorsa dai proiettili."
+layer = "runtime"
+category = "attack"
+stat_key = "projectile_range"
+base_cost = 13
+cost_growth = 1.105
+value_per_level = 8.0
+max_level = 50

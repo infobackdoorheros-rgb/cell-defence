@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="UpgradeData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/upgrade_data.gd" id="1_4wr4n"]
+
+[resource]
+script = ExtResource("1_4wr4n")
+upgrade_id = "runtime_atp_gain"
+display_name = "Catalisi Mitocondriale"
+description = "Aumenta l'ATP ricavato dalle particelle energetiche raccolte."
+layer = "runtime"
+category = "utility"
+stat_key = "atp_gain_multiplier"
+base_cost = 11
+cost_growth = 1.104
+value_per_level = 0.03
+max_level = 50
+display_as_percent = true

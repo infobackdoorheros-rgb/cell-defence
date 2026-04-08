@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="ChapterData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/chapter_data.gd" id="1_br0n6"]
+
+[resource]
+script = ExtResource("1_br0n6")
+chapter_id = "chapter_bronchial"
+display_name = "Bronchial Lattice"
+description = "Zona ad alta turbolenza. Le ondate sono piu dense ma il rendimento economico cresce in modo sensibile."
+short_blurb = "Piu pressione, piu ATP, piu DNA."
+sort_order = 1
+accent_color = Color(1, 0.74, 0.41, 1)
+dna_multiplier = 1.18
+atp_multiplier = 1.15
+event_point_multiplier = 1.1
+enemy_health_multiplier = 1.08
+enemy_speed_multiplier = 1.03
+spawn_count_bonus = 2
+boss_support_bonus = 1
+virus_weight_bonus = 0.0
+bacteria_weight_bonus = 0.14
+arena_primary = Color(0.92, 0.58, 0.24, 0.12)
+arena_secondary = Color(1, 0.77, 0.41, 0.08)

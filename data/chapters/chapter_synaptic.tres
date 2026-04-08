@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="ChapterData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/chapter_data.gd" id="1_synp7"]
+
+[resource]
+script = ExtResource("1_synp7")
+chapter_id = "chapter_synaptic"
+display_name = "Synaptic Storm"
+description = "Capitolo avanzato con ingressi rapidi e threat spikes piu duri. Migliora le ricompense ma richiede build gia mature."
+short_blurb = "Alta velocita, picchi duri, payoff migliore."
+sort_order = 2
+accent_color = Color(0.79, 0.57, 1, 1)
+dna_multiplier = 1.3
+atp_multiplier = 1.22
+event_point_multiplier = 1.2
+enemy_health_multiplier = 1.08
+enemy_speed_multiplier = 1.04
+spawn_count_bonus = 2
+boss_support_bonus = 2
+virus_weight_bonus = 0.16
+bacteria_weight_bonus = 0.1
+arena_primary = Color(0.56, 0.46, 1, 0.12)
+arena_secondary = Color(0.45, 0.82, 1, 0.08)

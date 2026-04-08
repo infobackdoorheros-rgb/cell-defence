@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="UpgradeData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/upgrade_data.gd" id="1_v6ef1"]
+
+[resource]
+script = ExtResource("1_v6ef1")
+upgrade_id = "runtime_bounce_targets"
+display_name = "Catena Opsonica"
+description = "Aumenta il numero massimo di bersagli che un rimbalzo puo concatenare."
+layer = "runtime"
+category = "attack"
+stat_key = "bounce_targets"
+base_cost = 24
+cost_growth = 1.124
+value_per_level = 0.06
+max_level = 50

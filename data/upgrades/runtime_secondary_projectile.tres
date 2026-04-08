@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="UpgradeData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/upgrade_data.gd" id="1_xw7fd"]
+
+[resource]
+script = ExtResource("1_xw7fd")
+upgrade_id = "runtime_secondary_projectile"
+display_name = "Diramazione Anticorpale"
+description = "Aumenta la probabilita che una scarica si ramifichi su bersagli extra."
+layer = "runtime"
+category = "attack"
+stat_key = "secondary_projectile_chance"
+base_cost = 21
+cost_growth = 1.118
+value_per_level = 0.007
+max_level = 50
+display_as_percent = true

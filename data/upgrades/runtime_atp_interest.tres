@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="UpgradeData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/upgrade_data.gd" id="1_i7nqb"]
+
+[resource]
+script = ExtResource("1_i7nqb")
+upgrade_id = "runtime_atp_interest"
+display_name = "Riserva Mitocondriale"
+description = "Alla fine di ogni wave genera ATP bonus in base alle riserve energetiche conservate."
+layer = "runtime"
+category = "utility"
+stat_key = "atp_interest_per_wave"
+base_cost = 18
+cost_growth = 1.115
+value_per_level = 0.007
+max_level = 50

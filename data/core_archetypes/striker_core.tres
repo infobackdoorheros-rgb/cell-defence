@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="CoreArchetypeData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/core_archetype_data.gd" id="1_s4r5a"]
+
+[resource]
+script = ExtResource("1_s4r5a")
+archetype_id = "striker_core"
+display_name = "Striker Core"
+description = "Pressione offensiva elevata. Riduce il tempo per dominare le prime wave e sciogliere gli elite."
+sort_order = 1
+accent_color = Color(1, 0.56, 0.47, 1)
+stat_bonuses = {
+"attack_speed": 0.12,
+"crit_chance": 0.04,
+"damage": 2.3
+}
+active_skill_name = "Cytokine Burst"
+active_skill_description = "Esplode dal nucleo con danno elevato in area. Perfetto per aprire varchi o ripulire dopo uno spike di pressione."
+active_skill_cooldown = 21.0
+active_skill_damage_multiplier = 3.15
+active_skill_radius = 126.0
+active_skill_shield_restore_ratio = 0.0

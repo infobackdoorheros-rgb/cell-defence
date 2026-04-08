@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="UpgradeData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/upgrade_data.gd" id="1_iqeq6"]
+
+[resource]
+script = ExtResource("1_iqeq6")
+upgrade_id = "meta_attack_speed"
+display_name = "Ritmo Basale"
+description = "Aumenta l'attack speed iniziale."
+layer = "meta"
+category = "attack"
+stat_key = "attack_speed"
+base_cost = 16
+cost_growth = 1.62
+value_per_level = 0.07
+max_level = 8

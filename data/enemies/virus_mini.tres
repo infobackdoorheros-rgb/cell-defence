@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1_ahx44"]
+
+[resource]
+script = ExtResource("1_ahx44")
+enemy_id = "virus_mini"
+display_name = "Mini Virus"
+family = "virus"
+tier = "normal"
+max_health = 10.0
+speed = 118.0
+contact_damage = 6.0
+collision_radius = 10.0
+atp_reward = 2
+dna_reward = 0
+display_color = Color(1, 0.627451, 0.678431, 1)
+scale_multiplier = 0.68

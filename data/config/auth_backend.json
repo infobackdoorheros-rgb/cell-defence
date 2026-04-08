@@ -1,0 +1,8 @@
+{
+	"mode": "remote",
+	"base_url": "",
+	"public_base_url": "",
+	"request_timeout_seconds": 15.0,
+	"google_device_flow_enabled": false,
+	"allow_local_fallback": false
+}

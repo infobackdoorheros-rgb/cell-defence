@@ -1,0 +1,61 @@
+services:
+  - type: web
+    name: cell-defense-auth-backend
+    runtime: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeployTrigger: commit
+    envVars:
+      - key: PORT
+        value: "10000"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: cell-defense-auth-db
+          property: connectionString
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: TRUST_PROXY
+        value: "true"
+      - key: SUPPORT_EMAIL
+        value: info.backdoorheros@gmail.com
+      - key: ALLOWED_ORIGINS
+        sync: false
+      - key: EMAIL_PROVIDER
+        value: "resend"
+      - key: RESEND_API_KEY
+        sync: false
+      - key: RESEND_FROM
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_SECURE
+        value: "false"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: SMTP_FROM
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_CALLBACK_URL
+        sync: false
+      - key: DEV_EXPOSE_CODES
+        value: "false"
+      - key: BACKDOOR_MAX_VERIFY_ATTEMPTS
+        value: "5"
+      - key: BACKDOOR_MIN_REQUEST_INTERVAL_MS
+        value: "60000"
+
+databases:
+  - name: cell-defense-auth-db
+    plan: free
+    databaseName: cell_defense_auth
+    user: cell_defense_auth_user

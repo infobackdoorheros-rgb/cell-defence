@@ -1,0 +1,59 @@
+{
+	"economy": {
+		"runtime_atp_scale": 1.08,
+		"dna_payout_scale": 1.0,
+		"starting_atp": 13,
+		"base_atp_per_wave": 4,
+		"atp_per_wave_growth": 1.0,
+		"base_dna_per_wave": 0,
+		"dna_per_wave_growth": 0.0
+	},
+	"combat": {
+		"enemy_health_scale": 1.0,
+		"enemy_speed_scale": 1.0,
+		"spawn_density_scale": 1.0
+	},
+	"reward_flow": {
+		"revive_charges": 1,
+		"dna_boost_charges": 1,
+		"dna_boost_multiplier": 2.0
+	},
+	"battle_pass": {
+		"season_id": "adaptive_response_alpha",
+		"kill_xp": 1,
+		"elite_xp": 4,
+		"boss_xp": 10,
+		"wave_xp": 3,
+		"mutation_xp": 6,
+		"tier_targets": [20, 42, 68, 98, 132, 170, 212, 258],
+		"tier_rewards": [6, 8, 10, 12, 14, 18, 22, 28]
+	},
+	"offers": {
+		"cards": [
+			{
+				"id": "starter_sample_kit",
+				"reward_type": "dna",
+				"reward_amount": 30,
+				"refresh": "once"
+			},
+			{
+				"id": "response_drop",
+				"reward_type": "dna",
+				"reward_amount": 14,
+				"refresh": "daily"
+			},
+			{
+				"id": "spore_exchange",
+				"reward_type": "season_event_points",
+				"reward_amount": 18,
+				"refresh": "daily"
+			},
+			{
+				"id": "pass_booster",
+				"reward_type": "battle_pass_xp",
+				"reward_amount": 22,
+				"refresh": "daily"
+			}
+		]
+	}
+}

@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1_bk4vp"]
+
+[resource]
+script = ExtResource("1_bk4vp")
+enemy_id = "bacteria_base"
+display_name = "Batterio Base"
+family = "bacteria"
+tier = "normal"
+max_health = 38.0
+speed = 62.0
+contact_damage = 13.0
+collision_radius = 20.0
+atp_reward = 7
+dna_reward = 0
+display_color = Color(0.329412, 0.780392, 0.65098, 1)
+scale_multiplier = 1.15

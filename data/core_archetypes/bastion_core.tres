@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="CoreArchetypeData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/core_archetype_data.gd" id="1_b4st0"]
+
+[resource]
+script = ExtResource("1_b4st0")
+archetype_id = "bastion_core"
+display_name = "Bastion Core"
+description = "Membrana pesante e risposta difensiva. Regge meglio il contatto e recupera spazio quando il fronte collassa."
+sort_order = 2
+accent_color = Color(0.41, 0.87, 0.64, 1)
+stat_bonuses = {
+"armor": 0.08,
+"damage": 2.4,
+"max_hp": 30.0,
+"regeneration": 0.6,
+"shield_max": 26.0
+}
+active_skill_name = "Membrane Surge"
+active_skill_description = "Lancia un impulso protettivo che colpisce ad area e ricarica una porzione consistente dello scudo."
+active_skill_cooldown = 24.0
+active_skill_damage_multiplier = 2.5
+active_skill_radius = 162.0
+active_skill_shield_restore_ratio = 0.42

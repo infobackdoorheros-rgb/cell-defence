@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="MutationData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/mutation_data.gd" id="1_e84w6"]
+
+[resource]
+script = ExtResource("1_e84w6")
+mutation_id = "mutation_slowing_aura"
+display_name = "Aura Citoplasmatica"
+description = "Rallenta i nemici che si avvicinano troppo al nucleo."
+rarity = "common"
+selection_weight = 1.0
+starts_unlocked = true
+slow_aura_strength = 0.3
+slow_aura_radius = 132.0

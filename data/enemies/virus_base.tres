@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1_6dc8i"]
+
+[resource]
+script = ExtResource("1_6dc8i")
+enemy_id = "virus_base"
+display_name = "Virus Base"
+family = "virus"
+tier = "normal"
+max_health = 22.0
+speed = 96.0
+contact_damage = 10.0
+collision_radius = 16.0
+atp_reward = 5
+dna_reward = 0
+display_color = Color(0.945098, 0.396078, 0.427451, 1)
+scale_multiplier = 1.0

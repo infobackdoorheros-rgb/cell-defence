@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="UpgradeData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/upgrade_data.gd" id="1_vea9m"]
+
+[resource]
+script = ExtResource("1_vea9m")
+upgrade_id = "runtime_random_defense_progress"
+display_name = "Catalisi Evolutiva Difensiva"
+description = "Ogni 10 secondi puo innescare gratis un potenziamento casuale di Difesa."
+layer = "runtime"
+category = "utility"
+stat_key = "random_defense_upgrade_chance"
+base_cost = 22
+cost_growth = 1.119
+value_per_level = 0.005
+max_level = 50
+display_as_percent = true

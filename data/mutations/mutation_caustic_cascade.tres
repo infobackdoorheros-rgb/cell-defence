@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="MutationData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/mutation_data.gd" id="1_s5drr"]
+
+[resource]
+script = ExtResource("1_s5drr")
+mutation_id = "mutation_caustic_cascade"
+display_name = "Cascata Caustica"
+description = "Gli anticorpi esplosivi diventano piu frequenti e piu distruttivi."
+rarity = "rare"
+selection_weight = 0.55
+splash_chance = 0.28
+splash_radius = 84.0
+splash_damage_multiplier = 0.78

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="UpgradeData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/upgrade_data.gd" id="1_7yyom"]
+
+[resource]
+script = ExtResource("1_7yyom")
+upgrade_id = "runtime_dna_per_wave"
+display_name = "Sequenziamento di Onda"
+description = "Ogni wave stabilizzata produce DNA bonus per il Laboratorio."
+layer = "runtime"
+category = "utility"
+stat_key = "dna_per_wave"
+base_cost = 19
+cost_growth = 1.116
+value_per_level = 0.9
+max_level = 50

@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="UpgradeData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/upgrade_data.gd" id="1_4m49g"]
+
+[resource]
+script = ExtResource("1_4m49g")
+upgrade_id = "runtime_antibacterial_focus"
+display_name = "Mimetismo Anti-Batterico"
+description = "Aumenta il danno inflitto specificamente ai batteri."
+layer = "runtime"
+category = "attack"
+stat_key = "damage_vs_bacteria_bonus"
+base_cost = 17
+cost_growth = 1.112
+value_per_level = 0.01
+max_level = 50
+display_as_percent = true

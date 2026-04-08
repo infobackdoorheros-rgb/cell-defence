@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="UpgradeData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/upgrade_data.gd" id="1_v0xbi"]
+
+[resource]
+script = ExtResource("1_v0xbi")
+upgrade_id = "runtime_random_utility_progress"
+display_name = "Catalisi Evolutiva Logistica"
+description = "Ogni 10 secondi puo innescare gratis un potenziamento casuale di Utility."
+layer = "runtime"
+category = "utility"
+stat_key = "random_utility_upgrade_chance"
+base_cost = 22
+cost_growth = 1.119
+value_per_level = 0.005
+max_level = 50

@@ -1,0 +1,55 @@
+; Engine configuration file.
+; It's best edited using the editor and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+config/name="Cell Defense: Core Immunity"
+run/main_scene="res://scenes/boot_loading_scene.tscn"
+config/features=PackedStringArray("4.5")
+config/icon="res://icon.svg"
+boot_splash/bg_color=Color(0.0509804, 0.0823529, 0.12549, 1)
+
+[autoload]
+
+SaveManager="*res://scripts/autoload/save_manager.gd"
+ContentDB="*res://scripts/autoload/content_db.gd"
+RemoteConfigManager="*res://scripts/autoload/remote_config_manager.gd"
+AnalyticsManager="*res://scripts/autoload/analytics_manager.gd"
+RunConfigManager="*res://scripts/autoload/run_config_manager.gd"
+MetaProgression="*res://scripts/autoload/meta_progression.gd"
+DailyMissionManager="*res://scripts/autoload/daily_mission_manager.gd"
+SeasonEventManager="*res://scripts/autoload/season_event_manager.gd"
+BattlePassManager="*res://scripts/autoload/battle_pass_manager.gd"
+OfferManager="*res://scripts/autoload/offer_manager.gd"
+RewardFlowManager="*res://scripts/autoload/reward_flow_manager.gd"
+SocialConnectManager="*res://scripts/autoload/social_connect_manager.gd"
+AccountAuthManager="*res://scripts/autoload/account_auth_manager.gd"
+SettingsManager="*res://scripts/autoload/settings_manager.gd"
+
+[display]
+
+window/size/viewport_width=720
+window/size/viewport_height=1280
+window/size/window_width_override=720
+window/size/window_height_override=1280
+window/handheld/orientation=1
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+
+[gui]
+
+theme/default_theme_scale=1.2
+
+[rendering]
+
+renderer/rendering_method="mobile"
+renderer/rendering_method.mobile="mobile"
+textures/canvas_textures/default_texture_filter=0
+environment/defaults/default_clear_color=Color(0.0313726, 0.0431373, 0.0666667, 1)

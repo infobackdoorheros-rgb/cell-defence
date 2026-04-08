@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1_0p4sm"]
+
+[resource]
+script = ExtResource("1_0p4sm")
+enemy_id = "boss_parasite_queen"
+display_name = "Parasite Queen"
+family = "virus"
+tier = "boss"
+max_health = 600.0
+speed = 46.0
+contact_damage = 32.0
+collision_radius = 38.0
+atp_reward = 80
+dna_reward = 18
+display_color = Color(0.556863, 0.494118, 1, 1)
+scale_multiplier = 2.0
+contact_self_destruct = false
+contact_tick_cooldown = 0.95
+spawn_children_interval = 5.0
+spawn_children_count = 2
+spawn_children_ids = PackedStringArray("virus_mini", "virus_base")

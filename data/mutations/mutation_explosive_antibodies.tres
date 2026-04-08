@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="MutationData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/mutation_data.gd" id="1_84qh6"]
+
+[resource]
+script = ExtResource("1_84qh6")
+mutation_id = "mutation_explosive_antibodies"
+display_name = "Burst Plasmatico"
+description = "Gli anticorpi hanno una chance di esplodere e danneggiare i nemici vicini."
+rarity = "rare"
+selection_weight = 0.75
+splash_chance = 0.22
+splash_radius = 72.0
+splash_damage_multiplier = 0.6

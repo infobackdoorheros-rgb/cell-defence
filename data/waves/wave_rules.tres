@@ -1,0 +1,56 @@
+[gd_resource type="Resource" script_class="WaveRulesData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/wave_rules_data.gd" id="1_ap7nq"]
+
+[resource]
+script = ExtResource("1_ap7nq")
+boss_interval = 10
+mutation_interval = 3
+initial_spawn_count = 5
+spawn_count_per_wave = 1.5
+base_spawn_interval = 0.88
+min_spawn_interval = 0.28
+health_scale_per_wave = 0.1
+speed_scale_per_wave = 0.015
+elite_start_wave = 7
+elite_base_chance = 0.04
+elite_chance_per_wave = 0.01
+boss_id = "boss_parasite_queen"
+boss_support_count = 5
+bands = [{
+"start_wave": 1,
+"end_wave": 2,
+"enemy_weights": {"virus_base": 0.72, "bacteria_base": 0.28},
+"elite_chance_bonus": 0.0,
+"spawn_count_bonus": -1
+}, {
+"start_wave": 3,
+"end_wave": 4,
+"enemy_weights": {"virus_base": 0.5, "virus_divider": 0.12, "bacteria_base": 0.28, "bacteria_regen": 0.1},
+"elite_chance_bonus": 0.0,
+"spawn_count_bonus": 0
+}, {
+"start_wave": 5,
+"end_wave": 6,
+"enemy_weights": {"virus_base": 0.34, "virus_divider": 0.18, "virus_dash": 0.1, "bacteria_base": 0.22, "bacteria_regen": 0.16},
+"elite_chance_bonus": 0.015,
+"spawn_count_bonus": 1
+}, {
+"start_wave": 7,
+"end_wave": 9,
+"enemy_weights": {"virus_base": 0.22, "virus_divider": 0.16, "virus_dash": 0.16, "bacteria_base": 0.18, "bacteria_regen": 0.16, "bacteria_armored": 0.12},
+"elite_chance_bonus": 0.04,
+"spawn_count_bonus": 2
+}, {
+"start_wave": 10,
+"end_wave": 15,
+"enemy_weights": {"virus_base": 0.16, "virus_divider": 0.14, "virus_dash": 0.2, "bacteria_base": 0.14, "bacteria_regen": 0.16, "bacteria_armored": 0.2},
+"elite_chance_bonus": 0.08,
+"spawn_count_bonus": 4
+}, {
+"start_wave": 16,
+"end_wave": 999,
+"enemy_weights": {"virus_base": 0.1, "virus_divider": 0.14, "virus_dash": 0.21, "bacteria_base": 0.12, "bacteria_regen": 0.18, "bacteria_armored": 0.25},
+"elite_chance_bonus": 0.1,
+"spawn_count_bonus": 6
+}]

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="UpgradeData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/upgrade_data.gd" id="1_2f0ws"]
+
+[resource]
+script = ExtResource("1_2f0ws")
+upgrade_id = "runtime_absolute_defense"
+display_name = "Guscio Gelificato"
+description = "Assorbe una quota fissa di danno prima che colpisca il nucleo."
+layer = "runtime"
+category = "defense"
+stat_key = "absolute_defense"
+base_cost = 18
+cost_growth = 1.112
+value_per_level = 0.45
+max_level = 50

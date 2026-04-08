@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="CoreArchetypeData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/core_archetype_data.gd" id="1_syn7h"]
+
+[resource]
+script = ExtResource("1_syn7h")
+archetype_id = "synthesis_core"
+display_name = "Synthesis Core"
+description = "Core metabolico orientato alla crescita. Espande raccolta ed economia per snowballare in fretta."
+sort_order = 3
+accent_color = Color(0.45, 0.82, 1, 1)
+stat_bonuses = {
+"atp_per_wave": 5.0,
+"atp_gain_multiplier": 0.22,
+"damage": 2.5,
+"max_hp": 10.0,
+"pickup_radius": 24.0,
+"regeneration": 0.8,
+"targeting_range": 18.0,
+"dna_crystal_spawn_bonus": 0.08
+}
+active_skill_name = "Metabolic Wave"
+active_skill_description = "Scarica un'onda ad ampio raggio pensata per alleggerire la pressione e proteggere le finestre di raccolta."
+active_skill_cooldown = 19.0
+active_skill_damage_multiplier = 2.8
+active_skill_radius = 188.0
+active_skill_shield_restore_ratio = 0.12

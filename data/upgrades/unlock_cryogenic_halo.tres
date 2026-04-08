@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="UpgradeData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/upgrade_data.gd" id="1_k9d0w"]
+
+[resource]
+script = ExtResource("1_k9d0w")
+upgrade_id = "unlock_cryogenic_halo"
+display_name = "Sblocca Alone Criogenico"
+description = "Aggiunge al pool una mutazione che potenzia fortemente l'aura rallentante."
+layer = "meta"
+category = "mutation"
+unlocks_mutation_id = "mutation_cryogenic_halo"
+base_cost = 34
+cost_growth = 1.0
+value_per_level = 0.0
+max_level = 1

@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1_27hgl"]
+
+[resource]
+script = ExtResource("1_27hgl")
+enemy_id = "virus_divider"
+display_name = "Virus Divisore"
+family = "virus"
+tier = "normal"
+max_health = 28.0
+speed = 84.0
+contact_damage = 12.0
+collision_radius = 18.0
+atp_reward = 7
+dna_reward = 0
+display_color = Color(0.952941, 0.447059, 0.588235, 1)
+scale_multiplier = 1.1
+split_children = PackedStringArray("virus_mini", "virus_mini")

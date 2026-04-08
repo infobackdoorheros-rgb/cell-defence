@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="UpgradeData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/upgrade_data.gd" id="1_y96eu"]
+
+[resource]
+script = ExtResource("1_y96eu")
+upgrade_id = "meta_regeneration"
+display_name = "Homeostasis Basale"
+description = "Aumenta la rigenerazione iniziale."
+layer = "meta"
+category = "defense"
+stat_key = "regeneration"
+base_cost = 14
+cost_growth = 1.6
+value_per_level = 0.5
+max_level = 8

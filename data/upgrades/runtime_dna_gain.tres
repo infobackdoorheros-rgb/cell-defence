@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="UpgradeData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/upgrade_data.gd" id="1_pb7ef"]
+
+[resource]
+script = ExtResource("1_pb7ef")
+upgrade_id = "runtime_dna_gain"
+display_name = "Sequenziamento Rapido"
+description = "Aumenta il DNA finale ottenuto durante la run."
+layer = "runtime"
+category = "utility"
+stat_key = "dna_gain_multiplier"
+base_cost = 18
+cost_growth = 1.117
+value_per_level = 0.02
+max_level = 50
+display_as_percent = true

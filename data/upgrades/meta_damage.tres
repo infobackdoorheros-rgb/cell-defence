@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="UpgradeData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/upgrade_data.gd" id="1_9a0ds"]
+
+[resource]
+script = ExtResource("1_9a0ds")
+upgrade_id = "meta_damage"
+display_name = "Danno Basale"
+description = "Aumenta il danno iniziale di ogni run."
+layer = "meta"
+category = "attack"
+stat_key = "damage"
+base_cost = 12
+cost_growth = 1.6
+value_per_level = 1.5
+max_level = 8

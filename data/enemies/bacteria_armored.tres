@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1_1vwdb"]
+
+[resource]
+script = ExtResource("1_1vwdb")
+enemy_id = "bacteria_armored"
+display_name = "Batterio Corazzato"
+family = "bacteria"
+tier = "normal"
+max_health = 78.0
+speed = 42.0
+contact_damage = 18.0
+collision_radius = 24.0
+atp_reward = 12
+dna_reward = 1
+display_color = Color(0.278431, 0.603922, 0.611765, 1)
+scale_multiplier = 1.35

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="MutationData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/mutation_data.gd" id="1_c6v0r"]
+
+[resource]
+script = ExtResource("1_c6v0r")
+mutation_id = "mutation_adaptive_homeostasis"
+display_name = "Homeostasis Adattiva"
+description = "Rigenerazione potenziata, ma lieve riduzione della frequenza di fuoco."
+rarity = "rare"
+selection_weight = 0.72
+regeneration_bonus = 3.2
+attack_speed_penalty = 0.16

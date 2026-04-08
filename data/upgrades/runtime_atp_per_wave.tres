@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="UpgradeData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/upgrade_data.gd" id="1_l0jyn"]
+
+[resource]
+script = ExtResource("1_l0jyn")
+upgrade_id = "runtime_atp_per_wave"
+display_name = "Sintesi Energetica di Onda"
+description = "Converte ogni wave stabilizzata in ATP immediato."
+layer = "runtime"
+category = "utility"
+stat_key = "atp_per_wave"
+base_cost = 13
+cost_growth = 1.108
+value_per_level = 4.0
+max_level = 50

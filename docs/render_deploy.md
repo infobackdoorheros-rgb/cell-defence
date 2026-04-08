@@ -1,0 +1,76 @@
+# Render Deploy
+
+Questo progetto e gia predisposto per Render tramite [render.yaml](C:/Users/matte/Desktop/CELL%20DEFENCE/render.yaml).
+
+## Cosa crea
+
+- un `Web Service` Node chiamato `cell-defense-auth-backend`
+- un database `Render Postgres` chiamato `cell-defense-auth-db`
+- root directory `backend`
+- health check su `/api/health`
+- deploy automatico da commit
+
+## Limite reale
+
+La creazione del servizio su Render non posso farla io direttamente da questa sessione, perche richiede:
+
+- accesso al tuo account Render
+- autorizzazione GitHub/GitLab del repository
+- eventuali conferme billing/workspace
+
+## Procedura minima
+
+1. Crea un account Render o accedi alla dashboard.
+2. Collega il repository del gioco.
+3. Scegli `New > Blueprint`.
+4. Seleziona questo repository.
+5. Render rilevera [render.yaml](C:/Users/matte/Desktop/CELL%20DEFENCE/render.yaml).
+6. Inserisci i valori richiesti per le variabili `sync: false`.
+7. Completa il deploy.
+
+## Variabili richieste
+
+- `ALLOWED_ORIGINS`
+- `RESEND_API_KEY`
+- `RESEND_FROM`
+- `GOOGLE_CLIENT_ID`
+- `GOOGLE_CLIENT_SECRET`
+- `GOOGLE_CALLBACK_URL`
+
+Per una prima attivazione puoi lasciare Google vuoto e usare solo `BackDoor Heroes` email auth.
+
+Il backend usa automaticamente:
+
+- `DATABASE_URL` dal database Render creato via blueprint
+- `RENDER_EXTERNAL_URL` come URL pubblico se `PUBLIC_BASE_URL` non e impostato
+- `TRUST_PROXY=true` per cookie e callback dietro proxy Render
+
+Il supporto `SMTP_*` rimane disponibile, ma su un deploy Render iniziale e piu semplice usare un provider email HTTP come `Resend`.
+
+## Dopo il deploy
+
+Render assegnera un URL pubblico tipo:
+
+- `https://cell-defense-auth-backend.onrender.com`
+
+Poi aggiorna [auth_backend.json](C:/Users/matte/Desktop/CELL%20DEFENCE/data/config/auth_backend.json) cosi:
+
+```json
+{
+  "mode": "remote",
+  "base_url": "https://cell-defense-auth-backend.onrender.com",
+  "public_base_url": "https://cell-defense-auth-backend.onrender.com",
+  "request_timeout_seconds": 15.0,
+  "google_device_flow_enabled": true,
+  "allow_local_fallback": false
+}
+```
+
+Ricostruisci poi l'APK.
+
+## Note ufficiali
+
+- Render assegna a ogni web service un sottodominio `onrender.com`: https://render.com/docs/web-services
+- I servizi free hanno filesystem effimero; per persistenza usa DB o disk supportati: https://render.com/docs/free
+- `render.yaml` supporta servizi, database ed env vars: https://render.com/docs/blueprint-spec
+- `RENDER_EXTERNAL_URL` e una variabile ambiente di piattaforma: https://render.com/docs/environment-variables

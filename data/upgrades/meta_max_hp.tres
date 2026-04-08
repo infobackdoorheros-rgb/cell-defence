@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="UpgradeData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/upgrade_data.gd" id="1_fyplp"]
+
+[resource]
+script = ExtResource("1_fyplp")
+upgrade_id = "meta_max_hp"
+display_name = "Volume Nucleare"
+description = "Aumenta gli HP iniziali."
+layer = "meta"
+category = "defense"
+stat_key = "max_hp"
+base_cost = 14
+cost_growth = 1.58
+value_per_level = 12.0
+max_level = 8

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="UpgradeData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/upgrade_data.gd" id="1_ufu4e"]
+
+[resource]
+script = ExtResource("1_ufu4e")
+upgrade_id = "runtime_crit_damage"
+display_name = "Reazione Amplificata"
+description = "Aumenta il moltiplicatore dei colpi critici."
+layer = "runtime"
+category = "attack"
+stat_key = "crit_damage"
+base_cost = 18
+cost_growth = 1.112
+value_per_level = 0.035
+max_level = 50

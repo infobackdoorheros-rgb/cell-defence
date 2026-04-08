@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="MutationData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/mutation_data.gd" id="1_eg1dy"]
+
+[resource]
+script = ExtResource("1_eg1dy")
+mutation_id = "mutation_antiviral_response"
+display_name = "Risposta Antivirale"
+description = "I tuoi anticorpi infliggono danni bonus ai virus."
+rarity = "common"
+selection_weight = 1.3
+starts_unlocked = true
+damage_vs_virus_bonus = 0.35

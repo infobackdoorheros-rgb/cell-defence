@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="UpgradeData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/upgrade_data.gd" id="1_pw8tw"]
+
+[resource]
+script = ExtResource("1_pw8tw")
+upgrade_id = "runtime_pickup_radius"
+display_name = "Assorbimento Esteso"
+description = "Aumenta il raggio di raccolta dell'ATP."
+layer = "runtime"
+category = "utility"
+stat_key = "pickup_radius"
+base_cost = 11
+cost_growth = 1.103
+value_per_level = 7.5
+max_level = 50

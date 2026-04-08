@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="UpgradeData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/upgrade_data.gd" id="1_3q0ik"]
+
+[resource]
+script = ExtResource("1_3q0ik")
+upgrade_id = "runtime_dna_per_kill"
+display_name = "Campionamento Genetico"
+description = "Ogni patogeno eliminato lascia piu tracce genetiche convertite in DNA."
+layer = "runtime"
+category = "utility"
+stat_key = "dna_bonus_per_kill"
+base_cost = 18
+cost_growth = 1.114
+value_per_level = 0.12
+max_level = 50

@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="CoreArchetypeData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/core_archetype_data.gd" id="1_8g7x2"]
+
+[resource]
+script = ExtResource("1_8g7x2")
+archetype_id = "sentinel_core"
+display_name = "Sentinel Core"
+description = "Profilo bilanciato. Tiene il centro stabile e trasforma ogni errore in recupero controllato."
+sort_order = 0
+accent_color = Color(0.36, 0.94, 0.84, 1)
+stat_bonuses = {
+"damage": 1.5,
+"max_hp": 12.0,
+"targeting_range": 24.0
+}
+active_skill_name = "Immune Pulse"
+active_skill_description = "Scarica un impulso circolare che danneggia i patogeni vicini e ristabilisce una piccola parte dello scudo."
+active_skill_cooldown = 23.0
+active_skill_damage_multiplier = 2.8
+active_skill_radius = 150.0
+active_skill_shield_restore_ratio = 0.18

@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="UpgradeData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/upgrade_data.gd" id="1_gjf8f"]
+
+[resource]
+script = ExtResource("1_gjf8f")
+upgrade_id = "meta_armor"
+display_name = "Membrana Corazzata"
+description = "Aumenta l'armatura iniziale di ogni run."
+layer = "meta"
+category = "defense"
+stat_key = "armor"
+base_cost = 18
+cost_growth = 1.62
+value_per_level = 0.03
+max_level = 6
+display_as_percent = true

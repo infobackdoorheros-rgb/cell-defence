@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="UpgradeData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/upgrade_data.gd" id="1_uklt1"]
+
+[resource]
+script = ExtResource("1_uklt1")
+upgrade_id = "runtime_contact_resistance"
+display_name = "Membrana Densa"
+description = "Riduce i danni da impatto diretto sul nucleo oltre l'armatura standard."
+layer = "runtime"
+category = "defense"
+stat_key = "contact_damage_reduction"
+base_cost = 19
+cost_growth = 1.115
+value_per_level = 0.007
+max_level = 50
+display_as_percent = true

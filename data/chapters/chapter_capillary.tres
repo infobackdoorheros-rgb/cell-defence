@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="ChapterData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/chapter_data.gd" id="1_cap1l"]
+
+[resource]
+script = ExtResource("1_cap1l")
+chapter_id = "chapter_capillary"
+display_name = "Capillary Basin"
+description = "Settore introduttivo e piu stabile. Ideale per apprendere il flusso, testare build e consolidare DNA."
+short_blurb = "Bilanciato e leggibile. Ottimo per il primo push."
+sort_order = 0
+accent_color = Color(0.35, 0.93, 0.84, 1)
+dna_multiplier = 1.0
+atp_multiplier = 1.08
+event_point_multiplier = 1.0
+enemy_health_multiplier = 0.94
+enemy_speed_multiplier = 0.96
+spawn_count_bonus = 0
+boss_support_bonus = 0
+virus_weight_bonus = 0.05
+bacteria_weight_bonus = 0.0
+arena_primary = Color(0.18, 0.78, 0.72, 0.12)
+arena_secondary = Color(0.31, 0.74, 1, 0.08)

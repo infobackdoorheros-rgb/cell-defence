@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="UpgradeData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/upgrade_data.gd" id="1_ntvxj"]
+
+[resource]
+script = ExtResource("1_ntvxj")
+upgrade_id = "runtime_bounce_chance"
+display_name = "Aggancio a Rimbalzo"
+description = "Gli anticorpi hanno una chance di saltare su un altro bersaglio dopo l'impatto."
+layer = "runtime"
+category = "attack"
+stat_key = "bounce_chance"
+base_cost = 22
+cost_growth = 1.121
+value_per_level = 0.007
+max_level = 50

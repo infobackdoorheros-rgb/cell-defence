@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="UpgradeData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/upgrade_data.gd" id="1_5ipfd"]
+
+[resource]
+script = ExtResource("1_5ipfd")
+upgrade_id = "runtime_bounce_radius"
+display_name = "Campo di Ricampionamento"
+description = "Espande il raggio entro cui un anticorpo puo rimbalzare verso un altro patogeno."
+layer = "runtime"
+category = "attack"
+stat_key = "bounce_radius"
+base_cost = 20
+cost_growth = 1.114
+value_per_level = 5.0
+max_level = 50

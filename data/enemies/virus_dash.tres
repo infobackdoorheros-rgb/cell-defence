@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1_a3ak4"]
+
+[resource]
+script = ExtResource("1_a3ak4")
+enemy_id = "virus_dash"
+display_name = "Virus Dash"
+family = "virus"
+tier = "normal"
+max_health = 26.0
+speed = 92.0
+contact_damage = 12.0
+collision_radius = 15.0
+atp_reward = 7
+dna_reward = 0
+display_color = Color(1, 0.52549, 0.360784, 1)
+scale_multiplier = 1.0
+dash_cooldown = 3.4
+dash_duration = 0.34
+dash_multiplier = 2.7

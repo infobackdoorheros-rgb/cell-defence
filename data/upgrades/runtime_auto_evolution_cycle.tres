@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="UpgradeData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/upgrade_data.gd" id="1_omf45"]
+
+[resource]
+script = ExtResource("1_omf45")
+upgrade_id = "runtime_auto_evolution_cycle"
+display_name = "Ciclo Auto-Evolutivo"
+description = "Riduce l'intervallo dei proc di auto-upgrade gratuiti."
+layer = "runtime"
+category = "utility"
+stat_key = "auto_upgrade_interval_reduction"
+base_cost = 20
+cost_growth = 1.118
+value_per_level = 0.006
+max_level = 50
+display_as_percent = true

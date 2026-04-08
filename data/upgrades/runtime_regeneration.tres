@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="UpgradeData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/upgrade_data.gd" id="1_2uxum"]
+
+[resource]
+script = ExtResource("1_2uxum")
+upgrade_id = "runtime_regeneration"
+display_name = "Riparazione Cellulare"
+description = "Rigenera HP passivamente nel tempo."
+layer = "runtime"
+category = "defense"
+stat_key = "regeneration"
+base_cost = 14
+cost_growth = 1.108
+value_per_level = 0.32
+max_level = 50

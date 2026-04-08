@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="UpgradeData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/upgrade_data.gd" id="1_9r8zv"]
+
+[resource]
+script = ExtResource("1_9r8zv")
+upgrade_id = "meta_crit_chance"
+display_name = "Precisione Genetica"
+description = "Aumenta la crit chance iniziale."
+layer = "meta"
+category = "attack"
+stat_key = "crit_chance"
+base_cost = 18
+cost_growth = 1.62
+value_per_level = 0.02
+max_level = 6
+display_as_percent = true
