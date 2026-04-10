@@ -1,4 +1,6 @@
+import dns from "node:dns/promises";
 import fs from "node:fs";
+import net from "node:net";
 import path from "node:path";
 import { Pool } from "pg";
 
@@ -6,6 +8,14 @@ const DATA_DIR = path.resolve(process.cwd(), "data");
 const STORE_PATH = path.join(DATA_DIR, "auth-store.json");
 const DATABASE_URL = String(process.env.DATABASE_URL || "").trim();
 const STORE_MODE = DATABASE_URL ? "postgres" : "file";
+const DATABASE_CONNECTION_TIMEOUT_MS = Number(process.env.DATABASE_CONNECTION_TIMEOUT_MS || 10000);
+const DATABASE_IDLE_TIMEOUT_MS = Number(process.env.DATABASE_IDLE_TIMEOUT_MS || 30000);
+const DATABASE_POOL_MAX = Number(process.env.DATABASE_POOL_MAX || 4);
+const DATABASE_SSL_ENABLED = String(process.env.DATABASE_SSL || "").toLowerCase() === "true";
+const parsedDatabaseUrl = DATABASE_URL ? new URL(DATABASE_URL) : null;
+const STORE_TARGET_HOST = parsedDatabaseUrl?.hostname || "";
+const STORE_TARGET_PORT = Number(parsedDatabaseUrl?.port || 5432);
+const STORE_TARGET_DATABASE = parsedDatabaseUrl?.pathname?.replace(/^\//, "") || "";
 
 const DEFAULT_STORE = {
   backdoorRequests: {},
@@ -65,10 +75,10 @@ function getPool() {
   if (!pool) {
     pool = new Pool({
       connectionString: DATABASE_URL,
-      connectionTimeoutMillis: Number(process.env.DATABASE_CONNECTION_TIMEOUT_MS || 10000),
-      idleTimeoutMillis: Number(process.env.DATABASE_IDLE_TIMEOUT_MS || 30000),
-      max: Number(process.env.DATABASE_POOL_MAX || 4),
-      ssl: String(process.env.DATABASE_SSL || "").toLowerCase() === "true"
+      connectionTimeoutMillis: DATABASE_CONNECTION_TIMEOUT_MS,
+      idleTimeoutMillis: DATABASE_IDLE_TIMEOUT_MS,
+      max: DATABASE_POOL_MAX,
+      ssl: DATABASE_SSL_ENABLED
         ? { rejectUnauthorized: false }
         : undefined
     });
@@ -78,6 +88,79 @@ function getPool() {
 
 export function getStoreMode() {
   return STORE_MODE;
+}
+
+export function getStoreDiagnostics() {
+  return {
+    configured: Boolean(DATABASE_URL),
+    targetHost: STORE_TARGET_HOST,
+    targetPort: STORE_TARGET_PORT,
+    targetDatabase: STORE_TARGET_DATABASE,
+    sslEnabled: DATABASE_SSL_ENABLED,
+    connectionTimeoutMs: DATABASE_CONNECTION_TIMEOUT_MS,
+    poolMax: DATABASE_POOL_MAX
+  };
+}
+
+export async function probeStoreConnectivity() {
+  const diagnostics = getStoreDiagnostics();
+  if (!diagnostics.configured || STORE_MODE !== "postgres") {
+    return {
+      dnsOk: false,
+      tcpOk: false,
+      dnsAddress: "",
+      probeError: diagnostics.configured ? "" : "DATABASE_URL missing"
+    };
+  }
+
+  let dnsAddress = "";
+  try {
+    const lookup = await dns.lookup(STORE_TARGET_HOST);
+    dnsAddress = lookup.address || "";
+  } catch (error) {
+    return {
+      dnsOk: false,
+      tcpOk: false,
+      dnsAddress: "",
+      probeError: error instanceof Error ? error.message : String(error)
+    };
+  }
+
+  try {
+    await new Promise((resolve, reject) => {
+      const socket = net.createConnection({
+        host: STORE_TARGET_HOST,
+        port: STORE_TARGET_PORT,
+        timeout: Math.min(DATABASE_CONNECTION_TIMEOUT_MS, 5000)
+      });
+      socket.once("connect", () => {
+        socket.destroy();
+        resolve(true);
+      });
+      socket.once("timeout", () => {
+        socket.destroy();
+        reject(new Error("TCP probe timeout"));
+      });
+      socket.once("error", (error) => {
+        socket.destroy();
+        reject(error);
+      });
+    });
+
+    return {
+      dnsOk: true,
+      tcpOk: true,
+      dnsAddress,
+      probeError: ""
+    };
+  } catch (error) {
+    return {
+      dnsOk: true,
+      tcpOk: false,
+      dnsAddress,
+      probeError: error instanceof Error ? error.message : String(error)
+    };
+  }
 }
 
 export async function initStore() {

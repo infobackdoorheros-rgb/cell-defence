@@ -13,9 +13,11 @@ import {
   getBackdoorRequest,
   getGoogleDeviceSession,
   getGoogleDeviceSessionByUserCode,
+  getStoreDiagnostics,
   getStoreMode,
   incrementBackdoorVerifyAttempts,
   initStore,
+  probeStoreConnectivity,
   updateGoogleDeviceSession,
   upsertBackdoorRequest,
   upsertUserProfile
@@ -45,7 +47,14 @@ const storeState = {
   ready: false,
   initializing: false,
   lastError: "",
-  lastCheckedAt: ""
+  lastCheckedAt: "",
+  diagnostics: getStoreDiagnostics(),
+  probe: {
+    dnsOk: false,
+    tcpOk: false,
+    dnsAddress: "",
+    probeError: ""
+  }
 };
 
 if (nodeEnv === "production" && !process.env.SESSION_SECRET) {
@@ -161,7 +170,9 @@ app.get("/api/health", (_req, res) => {
     storeReady: storeState.ready,
     storeInitializing: storeState.initializing,
     storeError: storeState.lastError,
-    storeLastCheckedAt: storeState.lastCheckedAt
+    storeLastCheckedAt: storeState.lastCheckedAt,
+    storeDiagnostics: storeState.diagnostics,
+    storeProbe: storeState.probe
   });
 });
 
@@ -425,15 +436,27 @@ async function warmStore() {
 
   storeState.initializing = true;
   storeState.lastCheckedAt = new Date().toISOString();
+  storeState.diagnostics = getStoreDiagnostics();
   try {
     await initStore();
     storeState.ready = true;
     storeState.lastError = "";
+    storeState.probe = {
+      dnsOk: true,
+      tcpOk: true,
+      dnsAddress: storeState.probe.dnsAddress,
+      probeError: ""
+    };
     console.log("Auth store initialized successfully");
   } catch (error) {
     storeState.ready = false;
     storeState.lastError = error instanceof Error ? error.message : String(error);
+    storeState.probe = await probeStoreConnectivity();
     console.error("Unable to initialize auth store", error);
+    console.error("Auth store diagnostics", {
+      diagnostics: storeState.diagnostics,
+      probe: storeState.probe
+    });
     setTimeout(warmStore, storeInitRetryMs);
   } finally {
     storeState.initializing = false;
