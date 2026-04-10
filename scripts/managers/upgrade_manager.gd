@@ -171,3 +171,20 @@ func _grant_random_free_upgrade(category: StringName) -> void:
 
 func _get_auto_progress_interval() -> float:
 	return max(3.0, RANDOM_PROGRESS_INTERVAL * (1.0 - _current_stats.auto_upgrade_interval_reduction))
+
+func get_snapshot_state() -> Dictionary:
+	return {
+		"runtime_levels": _runtime_levels.duplicate(true),
+		"attack_progress_timer": _attack_progress_timer,
+		"defense_progress_timer": _defense_progress_timer,
+		"utility_progress_timer": _utility_progress_timer
+	}
+
+func restore_snapshot_state(data: Dictionary) -> void:
+	_runtime_levels = (data.get("runtime_levels", {}) as Dictionary).duplicate(true)
+	_attack_progress_timer = max(0.05, float(data.get("attack_progress_timer", RANDOM_PROGRESS_INTERVAL)))
+	_defense_progress_timer = max(0.05, float(data.get("defense_progress_timer", RANDOM_PROGRESS_INTERVAL)))
+	_utility_progress_timer = max(0.05, float(data.get("utility_progress_timer", RANDOM_PROGRESS_INTERVAL)))
+	_active_mutations = mutation_manager.get_active_mutations()
+	recompute_stats()
+	upgrades_changed.emit()

@@ -20,7 +20,7 @@ func _ready() -> void:
 	if not resized.is_connected(_rebuild_field):
 		resized.connect(_rebuild_field)
 	_rebuild_field()
-	set_process(true)
+	set_process(not SettingsManager.use_mobile_safe_visuals())
 
 func _process(delta: float) -> void:
 	_time += delta

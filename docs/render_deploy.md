@@ -28,6 +28,21 @@ La creazione del servizio su Render non posso farla io direttamente da questa se
 6. Inserisci i valori richiesti per le variabili `sync: false`.
 7. Completa il deploy.
 
+## Se hai gia creato un normale Web Service
+
+Il log con errore su `/opt/render/project/src/package.json` indica che Render sta buildando dalla root del repository come servizio standard, senza usare il blueprint.
+
+Hai 2 strade:
+
+1. Consigliata: elimina quel servizio e ricrealo con `New > Blueprint`, cosi Render usera [render.yaml](C:/Users/matte/Desktop/CELL%20DEFENCE/render.yaml) e il `rootDir: backend`.
+2. Rapida: tieni il servizio attuale ma imposta manualmente:
+   - `Root Directory`: `backend`
+   - `Build Command`: `npm install`
+   - `Start Command`: `npm start`
+   - `Health Check Path`: `/api/health`
+
+In piu il repository ora ha anche un [package.json](C:/Users/matte/Desktop/CELL%20DEFENCE/package.json) in root che inoltra `npm start` al backend, quindi dopo il push il deploy dalla root e piu tollerante anche se lasci un servizio standard.
+
 ## Variabili richieste
 
 - `ALLOWED_ORIGINS`

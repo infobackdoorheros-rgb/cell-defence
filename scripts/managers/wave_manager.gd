@@ -317,7 +317,26 @@ func _apply_chapter_weights(weights: Dictionary, chapter) -> Dictionary:
 			if enemy_data != null:
 				if enemy_data.family == &"virus":
 					weighted_value *= 1.0 + chapter.virus_weight_bonus
-				elif enemy_data.family == &"bacteria":
-					weighted_value *= 1.0 + chapter.bacteria_weight_bonus
+			elif enemy_data.family == &"bacteria":
+				weighted_value *= 1.0 + chapter.bacteria_weight_bonus
 		adjusted[key] = weighted_value
 	return adjusted
+
+func get_snapshot_state() -> Dictionary:
+	return {
+		"resume_wave": max(1, current_wave)
+	}
+
+func restore_snapshot_state(data: Dictionary) -> void:
+	for enemy in _active_enemies:
+		if is_instance_valid(enemy):
+			enemy.queue_free()
+	_active_enemies.clear()
+	_spawn_queue.clear()
+	var resume_wave: int = max(1, int(data.get("resume_wave", 1)))
+	current_wave = max(resume_wave - 1, 0)
+	_spawn_timer = 0.0
+	_intermission_timer = 0.35
+	_wave_in_progress = false
+	_awaiting_mutation_choice = false
+	enemy_counts_changed.emit(0, 0)

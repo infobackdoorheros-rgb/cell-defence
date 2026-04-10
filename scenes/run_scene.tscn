@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3]
+[gd_scene load_steps=13 format=3]
 
 [ext_resource type="Script" path="res://scripts/run/run_scene.gd" id="1_v0vuv"]
 [ext_resource type="Script" path="res://scripts/run/arena_backdrop.gd" id="2_3euym"]
@@ -7,6 +7,7 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/mutation_choice_panel.tscn" id="4_p85nd"]
 [ext_resource type="PackedScene" path="res://scenes/ui/game_over_panel.tscn" id="5_tu5la"]
 [ext_resource type="PackedScene" path="res://scenes/ui/ftue_overlay.tscn" id="6_u3g9q"]
+[ext_resource type="PackedScene" path="res://scenes/ui/pause_menu_panel.tscn" id="7_n8qsj"]
 [ext_resource type="Script" path="res://scripts/managers/resource_manager.gd" id="6_7cudg"]
 [ext_resource type="Script" path="res://scripts/managers/upgrade_manager.gd" id="7_13rso"]
 [ext_resource type="Script" path="res://scripts/managers/mutation_manager.gd" id="8_xr4au"]
@@ -47,3 +48,5 @@ script = ExtResource("9_3qhyw")
 [node name="GameOverPanel" parent="UI" instance=ExtResource("5_tu5la")]
 
 [node name="FTUEOverlay" parent="UI" instance=ExtResource("6_u3g9q")]
+
+[node name="PauseMenuPanel" parent="UI" instance=ExtResource("7_n8qsj")]

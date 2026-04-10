@@ -132,3 +132,30 @@ func build_run_summary() -> Dictionary:
 		"dna_earned": get_projected_dna(),
 		"best_wave": max(MetaProgression.best_wave, wave_reached)
 	}
+
+func get_snapshot_state() -> Dictionary:
+	return {
+		"atp": atp,
+		"wave_reached": wave_reached,
+		"dna_bonus": dna_bonus,
+		"dna_pickups_collected": dna_pickups_collected,
+		"dna_gain_multiplier": dna_gain_multiplier,
+		"chapter_dna_multiplier": chapter_dna_multiplier,
+		"kills": kills,
+		"elite_kills": elite_kills,
+		"boss_kills": boss_kills
+	}
+
+func restore_snapshot_state(data: Dictionary) -> void:
+	atp = max(0, int(data.get("atp", atp)))
+	wave_reached = max(1, int(data.get("wave_reached", wave_reached)))
+	dna_bonus = max(0, int(data.get("dna_bonus", dna_bonus)))
+	dna_pickups_collected = max(0, int(data.get("dna_pickups_collected", dna_pickups_collected)))
+	dna_gain_multiplier = max(0.2, float(data.get("dna_gain_multiplier", dna_gain_multiplier)))
+	chapter_dna_multiplier = max(0.5, float(data.get("chapter_dna_multiplier", chapter_dna_multiplier)))
+	kills = max(0, int(data.get("kills", kills)))
+	elite_kills = max(0, int(data.get("elite_kills", elite_kills)))
+	boss_kills = max(0, int(data.get("boss_kills", boss_kills)))
+	atp_changed.emit(atp)
+	dna_projection_changed.emit(get_projected_dna())
+	kill_stats_changed.emit(kills, elite_kills, boss_kills)

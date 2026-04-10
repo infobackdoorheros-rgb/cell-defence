@@ -1,9 +1,10 @@
 extends Node
 
 const SAVE_PATH := "user://cell_defense_save.json"
-const CURRENT_SAVE_VERSION := 4
+const CURRENT_SAVE_VERSION := 5
 
 var _cached_save: Dictionary = {}
+var _pending_resume_saved_run: bool = false
 
 func _ready() -> void:
 	_cached_save = load_save()
@@ -26,6 +27,11 @@ func get_default_save() -> Dictionary:
 		"season_event": {},
 		"battle_pass": {},
 		"offers": {},
+		"shop_state": {
+			"rewarded_day": "",
+			"rewarded_claims_today": 0,
+			"iap_test_claims": {}
+		},
 		"social_connections": {},
 		"account_auth": {
 			"provider": "guest",
@@ -48,7 +54,8 @@ func get_default_save() -> Dictionary:
 			"audio_enabled": true,
 			"language": "it",
 			"graphics_mode": "auto"
-		}
+		},
+		"run_snapshot": {}
 	}
 
 func get_save() -> Dictionary:
@@ -117,6 +124,14 @@ func _migrate_save(data: Dictionary) -> Dictionary:
 		if typeof(analytics) != TYPE_DICTIONARY:
 			migrated["analytics"] = {}
 
+	if save_version < 5:
+		var shop_state: Variant = migrated.get("shop_state", {})
+		if typeof(shop_state) != TYPE_DICTIONARY:
+			migrated["shop_state"] = {}
+		var run_snapshot: Variant = migrated.get("run_snapshot", {})
+		if typeof(run_snapshot) != TYPE_DICTIONARY:
+			migrated["run_snapshot"] = {}
+
 	migrated["save_version"] = CURRENT_SAVE_VERSION
 	return migrated
 
@@ -140,3 +155,27 @@ func reset_game_progress() -> void:
 	_cached_save["account_auth"] = preserved_account
 	_cached_save["settings"] = preserved_settings
 	write_save(_prepare_save_state(_cached_save))
+
+func get_run_snapshot() -> Dictionary:
+	return (_cached_save.get("run_snapshot", {}) as Dictionary).duplicate(true)
+
+func has_run_snapshot() -> bool:
+	return not get_run_snapshot().is_empty()
+
+func save_run_snapshot(snapshot: Dictionary) -> void:
+	write_save({
+		"run_snapshot": snapshot
+	})
+
+func clear_run_snapshot() -> void:
+	write_save({
+		"run_snapshot": {}
+	})
+
+func request_resume_saved_run() -> void:
+	_pending_resume_saved_run = true
+
+func consume_resume_saved_run_request() -> bool:
+	var should_resume := _pending_resume_saved_run
+	_pending_resume_saved_run = false
+	return should_resume

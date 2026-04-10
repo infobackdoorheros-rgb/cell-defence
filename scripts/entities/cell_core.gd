@@ -225,6 +225,28 @@ func get_active_skill_cooldown_total() -> float:
 func get_active_skill_cooldown_remaining() -> float:
 	return _active_skill_cooldown_remaining
 
+func get_snapshot_state() -> Dictionary:
+	return {
+		"current_health": _current_health,
+		"current_shield": _current_shield,
+		"attack_cooldown": _attack_cooldown,
+		"active_skill_cooldown_remaining": _active_skill_cooldown_remaining,
+		"rapid_fire_timer": _rapid_fire_timer,
+		"invulnerability_timer": _invulnerability_timer
+	}
+
+func restore_snapshot_state(data: Dictionary) -> void:
+	_current_health = clamp(float(data.get("current_health", _current_stats.max_hp)), 0.0, _current_stats.max_hp)
+	_current_shield = clamp(float(data.get("current_shield", _current_stats.shield_max)), 0.0, _current_stats.shield_max)
+	_attack_cooldown = max(0.0, float(data.get("attack_cooldown", 0.0)))
+	_active_skill_cooldown_remaining = max(0.0, float(data.get("active_skill_cooldown_remaining", 0.0)))
+	_rapid_fire_timer = max(0.0, float(data.get("rapid_fire_timer", 0.0)))
+	_invulnerability_timer = max(0.0, float(data.get("invulnerability_timer", 0.0)))
+	health_changed.emit(_current_health, _current_stats.max_hp)
+	shield_changed.emit(_current_shield, _current_stats.shield_max)
+	active_skill_state_changed.emit(_active_skill_cooldown_remaining, get_active_skill_cooldown_total())
+	queue_redraw()
+
 func _fire_volley(targets: Array) -> void:
 	_attack_pulse_timer = 0.16
 	for target in targets:

@@ -25,6 +25,7 @@ var _live_value_label: Label
 var _live_meta_label: Label
 
 var _play_button: Button
+var _resume_button: Button
 var _play_hint_label: Label
 
 var _combat_row: HBoxContainer
@@ -69,6 +70,8 @@ func _ready() -> void:
 		BattlePassManager.progress_changed.connect(_refresh_all)
 	if not OfferManager.offers_changed.is_connected(_refresh_all):
 		OfferManager.offers_changed.connect(_refresh_all)
+	if not ShopManager.shop_changed.is_connected(_refresh_all):
+		ShopManager.shop_changed.connect(_refresh_all)
 
 	_refresh_all()
 	call_deferred("_update_responsive_layout")
@@ -79,7 +82,7 @@ func _build_ui() -> void:
 	backdrop.accent_a = Color(0.29, 0.94, 0.84, 0.24)
 	backdrop.accent_b = Color(0.96, 0.47, 0.83, 0.16)
 	backdrop.accent_c = Color(0.42, 0.62, 1.0, 0.18)
-	backdrop.motion_strength = 0.72
+	backdrop.motion_strength = 0.0 if SettingsManager.use_mobile_safe_visuals() else 0.72
 	add_child(backdrop)
 
 	_root_margin = MarginContainer.new()
@@ -99,7 +102,10 @@ func _build_ui() -> void:
 	scroll.add_child(layout)
 
 	layout.add_child(_build_top_bar())
-	layout.add_child(_build_battle_stage())
+	if SettingsManager.use_mobile_safe_visuals():
+		layout.add_child(_build_safe_battle_stage())
+	else:
+		layout.add_child(_build_battle_stage())
 	layout.add_child(_build_social_strip())
 
 func _build_top_bar() -> PanelContainer:
@@ -216,9 +222,26 @@ func _build_battle_stage() -> PanelContainer:
 	_play_button = Button.new()
 	_play_button.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_play_button.custom_minimum_size = Vector2(230.0, 84.0)
-	_play_button.pressed.connect(func() -> void: get_tree().change_scene_to_file("res://scenes/prep_bay_scene.tscn"))
+	_play_button.pressed.connect(_on_prepare_run_pressed)
 	_apply_battle_button_style(_play_button)
-	battle_wrap.add_child(_play_button)
+	var battle_stack := VBoxContainer.new()
+	battle_stack.add_theme_constant_override("separation", 8)
+	battle_wrap.add_child(battle_stack)
+
+	var resume_wrap := CenterContainer.new()
+	battle_stack.add_child(resume_wrap)
+
+	_resume_button = Button.new()
+	_resume_button.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_resume_button.custom_minimum_size = Vector2(184.0, 56.0)
+	BioUI.style_button(_resume_button, Color(0.35, 0.92, 0.83, 1.0), 56.0)
+	_resume_button.pressed.connect(_on_resume_run_pressed)
+	_resume_button.visible = false
+	resume_wrap.add_child(_resume_button)
+
+	var deploy_wrap := CenterContainer.new()
+	battle_stack.add_child(deploy_wrap)
+	deploy_wrap.add_child(_play_button)
 
 	_play_hint_label = Label.new()
 	_play_hint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -232,10 +255,10 @@ func _build_battle_stage() -> PanelContainer:
 	_combat_row.add_child(_right_rail)
 
 	_right_rail.add_child(_create_rail_button(
-		&"ops",
+		&"shop",
 		Color(0.06, 0.12, 0.12, 0.98),
 		Color(0.41, 0.95, 0.68, 1.0),
-		func() -> void: get_tree().change_scene_to_file("res://scenes/live_ops_scene.tscn")
+		func() -> void: get_tree().change_scene_to_file("res://scenes/shop_scene.tscn")
 	))
 	_right_rail.add_child(_create_rail_button(
 		&"options",
@@ -249,6 +272,101 @@ func _build_battle_stage() -> PanelContainer:
 		Color(1.0, 0.49, 0.45, 1.0),
 		func() -> void: get_tree().quit()
 	))
+
+	return panel
+
+func _build_safe_battle_stage() -> PanelContainer:
+	var panel := PanelContainer.new()
+	_apply_panel_style(panel, Color(0.05, 0.08, 0.13, 0.96), Color(0.28, 0.93, 0.85, 0.72), 28, 16, 0)
+
+	var root := VBoxContainer.new()
+	root.add_theme_constant_override("separation", 12)
+	panel.add_child(root)
+
+	_status_chip_label = Label.new()
+	_status_chip_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	BioUI.style_chip(_status_chip_label, Color(0.11, 0.11, 0.18, 0.96), Color(0.48, 0.84, 1.0, 0.9))
+	root.add_child(_status_chip_label)
+
+	_hero_title_label = Label.new()
+	_hero_title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	BioUI.style_title(_hero_title_label, 44, Color(0.97, 0.99, 1.0, 1.0))
+	root.add_child(_hero_title_label)
+
+	_hero_subtitle_label = Label.new()
+	_hero_subtitle_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	BioUI.style_heading(_hero_subtitle_label, Color(1.0, 0.77, 0.42, 1.0), 20)
+	root.add_child(_hero_subtitle_label)
+
+	_hero_note_label = Label.new()
+	_hero_note_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_hero_note_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	BioUI.style_subtitle(_hero_note_label, 14)
+	root.add_child(_hero_note_label)
+
+	var summary_grid := GridContainer.new()
+	summary_grid.columns = 1
+	summary_grid.add_theme_constant_override("h_separation", 10)
+	summary_grid.add_theme_constant_override("v_separation", 10)
+	root.add_child(summary_grid)
+
+	var loadout_card := _create_info_card(Color(0.38, 0.88, 1.0, 1.0))
+	summary_grid.add_child(loadout_card.get("panel") as PanelContainer)
+	_loadout_title_label = loadout_card.get("title") as Label
+	_loadout_value_label = loadout_card.get("value") as Label
+	_loadout_meta_label = loadout_card.get("meta") as Label
+
+	var live_card := _create_info_card(Color(0.88, 0.58, 1.0, 1.0))
+	summary_grid.add_child(live_card.get("panel") as PanelContainer)
+	_live_title_label = live_card.get("title") as Label
+	_live_value_label = live_card.get("value") as Label
+	_live_meta_label = live_card.get("meta") as Label
+
+	var battle_wrap := CenterContainer.new()
+	root.add_child(battle_wrap)
+
+	_play_button = Button.new()
+	_play_button.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_play_button.custom_minimum_size = Vector2(230.0, 82.0)
+	_play_button.pressed.connect(_on_prepare_run_pressed)
+	_apply_battle_button_style(_play_button)
+	var battle_stack := VBoxContainer.new()
+	battle_stack.add_theme_constant_override("separation", 8)
+	battle_wrap.add_child(battle_stack)
+
+	var resume_wrap := CenterContainer.new()
+	battle_stack.add_child(resume_wrap)
+
+	_resume_button = Button.new()
+	_resume_button.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_resume_button.custom_minimum_size = Vector2(184.0, 54.0)
+	BioUI.style_button(_resume_button, Color(0.35, 0.92, 0.83, 1.0), 54.0)
+	_resume_button.pressed.connect(_on_resume_run_pressed)
+	_resume_button.visible = false
+	resume_wrap.add_child(_resume_button)
+
+	var deploy_wrap := CenterContainer.new()
+	battle_stack.add_child(deploy_wrap)
+	deploy_wrap.add_child(_play_button)
+
+	_play_hint_label = Label.new()
+	_play_hint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_play_hint_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	BioUI.style_subtitle(_play_hint_label, 13)
+	root.add_child(_play_hint_label)
+
+	var module_grid := GridContainer.new()
+	module_grid.columns = 2
+	module_grid.add_theme_constant_override("h_separation", 10)
+	module_grid.add_theme_constant_override("v_separation", 10)
+	root.add_child(module_grid)
+
+	_add_safe_module_button(module_grid, &"laboratory", Color(0.15, 0.1, 0.06, 0.98), Color(1.0, 0.78, 0.4, 1.0), func() -> void: get_tree().change_scene_to_file("res://scenes/laboratory_scene.tscn"))
+	_add_safe_module_button(module_grid, &"daily", Color(0.07, 0.11, 0.18, 0.98), Color(0.45, 0.83, 1.0, 1.0), func() -> void: get_tree().change_scene_to_file("res://scenes/daily_missions_scene.tscn"))
+	_add_safe_module_button(module_grid, &"season", Color(0.11, 0.08, 0.18, 0.98), Color(0.86, 0.62, 1.0, 1.0), func() -> void: get_tree().change_scene_to_file("res://scenes/season_event_scene.tscn"))
+	_add_safe_module_button(module_grid, &"shop", Color(0.06, 0.12, 0.12, 0.98), Color(0.41, 0.95, 0.68, 1.0), func() -> void: get_tree().change_scene_to_file("res://scenes/shop_scene.tscn"))
+	_add_safe_module_button(module_grid, &"options", Color(0.06, 0.1, 0.16, 0.98), Color(0.56, 0.8, 1.0, 1.0), func() -> void: get_tree().change_scene_to_file("res://scenes/options_scene.tscn"))
+	_add_safe_module_button(module_grid, &"exit", Color(0.12, 0.07, 0.09, 0.98), Color(1.0, 0.49, 0.45, 1.0), func() -> void: get_tree().quit())
 
 	return panel
 
@@ -366,6 +484,13 @@ func _create_rail_button(card_id: StringName, fill: Color, accent: Color, callba
 	}
 	return button
 
+func _add_safe_module_button(container: Control, card_id: StringName, fill: Color, accent: Color, callback: Callable) -> void:
+	var button := _create_rail_button(card_id, fill, accent, callback)
+	button.custom_minimum_size = Vector2(0.0, 112.0)
+	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	container.add_child(button)
+
 func _create_info_card(accent: Color) -> Dictionary:
 	var panel := PanelContainer.new()
 	_apply_panel_style(panel, Color(0.08, 0.11, 0.18, 0.94), Color(accent.r, accent.g, accent.b, 0.84), 22, 14, 16)
@@ -409,7 +534,7 @@ func _apply_panel_style(panel: PanelContainer, fill: Color, border: Color, radiu
 	style.set_corner_radius_all(radius)
 	style.set_border_width_all(2)
 	style.shadow_color = Color(border.r, border.g, border.b, 0.24)
-	style.shadow_size = shadow_size
+	style.shadow_size = 0 if SettingsManager.use_mobile_safe_visuals() else shadow_size
 	style.shadow_offset = Vector2(0, 8)
 	style.content_margin_left = padding
 	style.content_margin_right = padding
@@ -441,7 +566,7 @@ func _make_button_style(fill: Color, border: Color, radius: int, border_width: i
 	style.set_corner_radius_all(radius)
 	style.set_border_width_all(border_width)
 	style.shadow_color = Color(border.r, border.g, border.b, 0.28)
-	style.shadow_size = shadow_size
+	style.shadow_size = 0 if SettingsManager.use_mobile_safe_visuals() else shadow_size
 	style.shadow_offset = Vector2(0, 8)
 	style.content_margin_left = 10
 	style.content_margin_right = 10
@@ -506,6 +631,9 @@ func _update_responsive_layout() -> void:
 	if _play_button != null:
 		_play_button.custom_minimum_size = Vector2(210.0 if compact else 240.0, 76.0 if compact else 84.0)
 		_play_button.add_theme_font_size_override("font_size", 26 if compact else 30)
+	if _resume_button != null:
+		_resume_button.custom_minimum_size = Vector2(164.0 if compact else 184.0, 50.0 if compact else 56.0)
+		_resume_button.add_theme_font_size_override("font_size", 18 if compact else 20)
 
 	if _social_buttons.size() > 0:
 		var provider_width := 62.0 if micro else 70.0
@@ -517,14 +645,27 @@ func _update_responsive_layout() -> void:
 		_account_button.custom_minimum_size.x = 146.0 if micro else (164.0 if compact else 184.0)
 
 func _refresh_all(_unused = null) -> void:
-	_status_chip_label.text = SettingsManager.t("main.status_chip")
-	_hero_note_label.text = SettingsManager.t("main.hero_brief")
-	_loadout_title_label.text = SettingsManager.t("main.panel.loadout")
-	_live_title_label.text = SettingsManager.t("main.panel.live")
-	_play_button.text = SettingsManager.t("main.battle_button")
-	_play_hint_label.text = SettingsManager.t("main.battle_hint")
+	if _status_chip_label != null:
+		_status_chip_label.text = SettingsManager.t("main.status_chip")
+	if _hero_title_label != null:
+		_hero_title_label.text = "CELL DEFENSE"
+	if _hero_subtitle_label != null:
+		_hero_subtitle_label.text = "CORE IMMUNITY"
+	if _hero_note_label != null:
+		_hero_note_label.text = SettingsManager.t("main.hero_brief")
+	if _loadout_title_label != null:
+		_loadout_title_label.text = SettingsManager.t("main.panel.loadout")
+	if _live_title_label != null:
+		_live_title_label.text = SettingsManager.t("main.panel.shop")
+	if _play_button != null:
+		_play_button.text = SettingsManager.t("main.battle_button")
+	if _resume_button != null:
+		_resume_button.text = SettingsManager.t("main.resume_button")
+	if _play_hint_label != null:
+		_play_hint_label.text = SettingsManager.t("main.battle_hint")
 
 	_refresh_signals()
+	_refresh_resume_state()
 	_refresh_module_cards()
 	_refresh_social_hub()
 	_refresh_account_state()
@@ -550,29 +691,42 @@ func _refresh_signals() -> void:
 		if bool(milestone_data.get("reached", false)) and not bool(milestone_data.get("claimed", false)):
 			event_ready += 1
 
-	_top_dna_label.text = SettingsManager.t("main.signal.dna") % [MetaProgression.dna]
-	_top_best_label.text = SettingsManager.t("main.signal.best") % [MetaProgression.best_wave]
-	_top_live_label.text = SettingsManager.t("main.signal.live") % [
-		BattlePassManager.get_claimable_tier_count(),
-		OfferManager.get_available_offer_count()
-	]
-	_top_network_label.text = SettingsManager.t("main.signal.network") % [
-		SocialConnectManager.get_connected_count(),
-		SocialConnectManager.get_provider_ids().size()
-	]
+	var shop_summary := ShopManager.get_shop_summary()
 
-	_loadout_value_label.text = archetype_name
-	_loadout_meta_label.text = "%s\n%s" % [skill_name, chapter_name]
-
-	_live_value_label.text = SettingsManager.t("main.badge.ready") % [daily_ready]
-	_live_meta_label.text = "%s   %s\n%s" % [
-		SettingsManager.t("main.badge.progress") % [event_progress, event_target],
-		SettingsManager.t("main.badge.ready") % [event_ready],
-		SettingsManager.t("main.signal.live") % [
-			BattlePassManager.get_claimable_tier_count(),
-			OfferManager.get_available_offer_count()
+	if _top_dna_label != null:
+		_top_dna_label.text = SettingsManager.t("main.signal.dna") % [MetaProgression.dna]
+	if _top_best_label != null:
+		_top_best_label.text = SettingsManager.t("main.signal.best") % [MetaProgression.best_wave]
+	if _top_live_label != null:
+		_top_live_label.text = SettingsManager.t("main.signal.shop") % [
+			int(shop_summary.get("free_dna_remaining", 0)),
+			int(shop_summary.get("offers_available", 0))
 		]
-	]
+	if _top_network_label != null:
+		_top_network_label.text = SettingsManager.t("main.signal.network") % [
+			SocialConnectManager.get_connected_count(),
+			SocialConnectManager.get_provider_ids().size()
+		]
+
+	if _loadout_value_label != null:
+		_loadout_value_label.text = archetype_name
+	if _loadout_meta_label != null:
+		_loadout_meta_label.text = "%s\n%s" % [skill_name, chapter_name]
+
+	if _live_value_label != null:
+		_live_value_label.text = SettingsManager.t("main.signal.shop") % [
+			int(shop_summary.get("free_dna_remaining", 0)),
+			int(shop_summary.get("offers_available", 0))
+		]
+	if _live_meta_label != null:
+		_live_meta_label.text = "%s   %s\n%s" % [
+			SettingsManager.t("main.badge.progress") % [event_progress, event_target],
+			SettingsManager.t("main.badge.ready") % [event_ready],
+			SettingsManager.t("main.shop_meta") % [
+				int(shop_summary.get("free_dna_limit", 0)),
+				int(shop_summary.get("offers_available", 0))
+			]
+		]
 
 	if _core_display != null:
 		if archetype != null:
@@ -616,11 +770,11 @@ func _refresh_module_cards() -> void:
 		SettingsManager.t("main.card.season_subtitle")
 	)
 	_set_module_content(
-		&"ops",
-		SettingsManager.t("main.rail.ops_tag"),
-		SettingsManager.t("main.rail.ops_title"),
-		"P%d  O%d" % [BattlePassManager.get_claimable_tier_count(), OfferManager.get_available_offer_count()],
-		SettingsManager.t("main.card.ops_subtitle")
+		&"shop",
+		SettingsManager.t("main.rail.shop_tag"),
+		SettingsManager.t("main.rail.shop_title"),
+		"%d FREE  |  %d OFF" % [int(ShopManager.get_shop_summary().get("free_dna_remaining", 0)), int(ShopManager.get_shop_summary().get("offers_available", 0))],
+		SettingsManager.t("main.card.shop_subtitle")
 	)
 	_set_module_content(
 		&"options",
@@ -636,6 +790,36 @@ func _refresh_module_cards() -> void:
 		SettingsManager.t("main.exit_note"),
 		SettingsManager.t("common.exit")
 	)
+
+func _refresh_resume_state() -> void:
+	if _resume_button == null or _play_hint_label == null:
+		return
+
+	var has_snapshot := SaveManager.has_run_snapshot()
+	_resume_button.visible = has_snapshot
+	if not has_snapshot:
+		_play_hint_label.text = SettingsManager.t("main.battle_hint")
+		return
+
+	var snapshot: Dictionary = SaveManager.get_run_snapshot()
+	var saved_wave: int = max(1, int(snapshot.get("saved_wave", 1)))
+	var saved_core_id := StringName(snapshot.get("selected_core_archetype", String(RunConfigManager.selected_core_archetype)))
+	var saved_chapter_id := StringName(snapshot.get("selected_chapter", String(RunConfigManager.selected_chapter)))
+	var saved_core = ContentDB.get_core_archetype(saved_core_id)
+	var saved_chapter = ContentDB.get_chapter(saved_chapter_id)
+	var core_name: String = saved_core.display_name if saved_core != null else String(saved_core_id)
+	var chapter_name: String = saved_chapter.display_name if saved_chapter != null else String(saved_chapter_id)
+	_resume_button.tooltip_text = SettingsManager.t("main.resume_hint") % [saved_wave]
+	_play_hint_label.text = "%s\n%s | %s" % [SettingsManager.t("main.resume_hint") % [saved_wave], core_name, chapter_name]
+
+func _on_prepare_run_pressed() -> void:
+	get_tree().change_scene_to_file("res://scenes/prep_bay_scene.tscn")
+
+func _on_resume_run_pressed() -> void:
+	if not SaveManager.has_run_snapshot():
+		return
+	SaveManager.request_resume_saved_run()
+	get_tree().change_scene_to_file("res://scenes/run_scene.tscn")
 
 func _set_module_content(card_id: StringName, tag_text: String, title_text: String, badge_text: String, tooltip_text: String) -> void:
 	var data := _module_cards.get(String(card_id), {}) as Dictionary
@@ -653,11 +837,12 @@ func _set_module_content(card_id: StringName, tag_text: String, title_text: Stri
 		button.tooltip_text = tooltip_text
 
 func _refresh_social_hub() -> void:
-	_social_summary_label.text = SettingsManager.t("main.social.summary") % [
-		SocialConnectManager.get_connected_count(),
-		SocialConnectManager.get_provider_ids().size()
-	]
-	if _social_feedback_label.text.is_empty():
+	if _social_summary_label != null:
+		_social_summary_label.text = SettingsManager.t("main.social.summary") % [
+			SocialConnectManager.get_connected_count(),
+			SocialConnectManager.get_provider_ids().size()
+		]
+	if _social_feedback_label != null and _social_feedback_label.text.is_empty():
 		_social_feedback_label.text = SettingsManager.t("main.social.note_compact")
 
 	for provider_id in SocialConnectManager.get_provider_ids():
@@ -682,6 +867,8 @@ func _refresh_social_hub() -> void:
 func _refresh_account_state() -> void:
 	if _account_button != null:
 		_account_button.text = SettingsManager.t("main.account_button")
+	if _account_status_label == null:
+		return
 	var status := AccountAuthManager.get_status()
 	match status:
 		&"authenticated":

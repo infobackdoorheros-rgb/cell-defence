@@ -8,7 +8,8 @@ var _time: float = 0.0
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	set_process(true)
+	set_process(not SettingsManager.use_mobile_safe_visuals())
+	queue_redraw()
 
 func _process(delta: float) -> void:
 	_time += delta

@@ -49,6 +49,24 @@ func choose_mutation(mutation_id: StringName) -> MutationData:
 			return mutation
 	return null
 
+func get_snapshot_state() -> Dictionary:
+	var mutation_ids := PackedStringArray()
+	for mutation in _active_mutations:
+		mutation_ids.append(String(mutation.mutation_id))
+	return {
+		"active_mutation_ids": mutation_ids
+	}
+
+func restore_snapshot_state(data: Dictionary) -> void:
+	_active_mutations.clear()
+	_offered_choices.clear()
+	var saved_ids: Variant = data.get("active_mutation_ids", [])
+	for mutation_id in saved_ids:
+		var mutation := ContentDB.get_mutation(StringName(mutation_id))
+		if mutation == null:
+			continue
+		_active_mutations.append(mutation)
+
 func _get_available_pool() -> Array[MutationData]:
 	var pool: Array[MutationData] = []
 	for mutation in ContentDB.get_all_mutations():

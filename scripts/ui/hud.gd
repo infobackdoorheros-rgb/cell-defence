@@ -8,6 +8,7 @@ const BioUI = preload("res://scripts/ui/bio_ui.gd")
 
 signal upgrade_requested(upgrade_id: StringName)
 signal active_skill_requested
+signal menu_requested
 
 var _top_left_stack: VBoxContainer
 var _top_right_stack: VBoxContainer
@@ -19,6 +20,7 @@ var _wave_chip: Label
 var _combat_chip: Label
 var _core_status_chip: Label
 var _engagement_chip: Label
+var _menu_button: Button
 
 var _bottom_margin: MarginContainer
 var _bottom_overlay: VBoxContainer
@@ -116,6 +118,14 @@ func _build_ui() -> void:
 	_top_right_stack = VBoxContainer.new()
 	_top_right_stack.add_theme_constant_override("separation", 8)
 	top_row.add_child(_top_right_stack)
+
+	_menu_button = Button.new()
+	_menu_button.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_menu_button.custom_minimum_size = Vector2(132.0, 40.0)
+	_apply_menu_button_style(_menu_button)
+	_menu_button.text = SettingsManager.t("hud.menu")
+	_menu_button.pressed.connect(func() -> void: menu_requested.emit())
+	_top_right_stack.add_child(_menu_button)
 
 	_combat_chip = _make_corner_chip(Color(0.09, 0.12, 0.17, 0.96), Color(0.46, 0.84, 1.0, 0.92))
 	_top_right_stack.add_child(_combat_chip)
@@ -569,6 +579,7 @@ func _update_responsive_layout() -> void:
 
 	_battle_wave_label.add_theme_font_size_override("font_size", 22 if _portrait_layout else (24 if compact else 28))
 	_active_skill_button.custom_minimum_size = Vector2(104.0 if _portrait_layout else (118.0 if compact else 132.0), 60.0 if _portrait_layout else (76.0 if compact else 84.0))
+	_menu_button.custom_minimum_size = Vector2(104.0 if _portrait_layout else (118.0 if compact else 132.0), 36.0 if _portrait_layout else 40.0)
 	_apply_strip_chip_style(_resource_chip, Color(0.1, 0.15, 0.22, 0.96), Color(1.0, 0.76, 0.4, 0.94), 16 if compact else 18)
 	_apply_strip_chip_style(_dna_chip, Color(0.12, 0.1, 0.2, 0.96), Color(0.93, 0.55, 1.0, 0.92), 16 if compact else 18)
 	_apply_strip_chip_style(_wave_chip, Color(0.08, 0.14, 0.21, 0.96), Color(0.38, 0.91, 0.84, 0.92), 16 if compact else 18)
@@ -598,11 +609,34 @@ func _apply_strip_chip_style(label: Label, fill: Color, accent: Color, radius: i
 	style.shadow_color = Color(accent.r, accent.g, accent.b, 0.24)
 	style.shadow_size = 10
 	style.shadow_offset = Vector2(0, 4)
+	label.add_theme_stylebox_override("normal", style)
+
+func _apply_menu_button_style(button: Button) -> void:
+	button.add_theme_font_size_override("font_size", 15)
+	button.add_theme_color_override("font_color", Color(0.97, 0.99, 1.0, 1.0))
+	var fill := Color(0.08, 0.11, 0.16, 0.96)
+	var accent := Color(0.96, 0.74, 0.4, 0.92)
+	var hover := Color(0.1, 0.15, 0.21, 0.98)
+	var pressed := Color(0.12, 0.17, 0.24, 0.98)
+	button.add_theme_stylebox_override("normal", _make_pill_button_style(fill, accent))
+	button.add_theme_stylebox_override("hover", _make_pill_button_style(hover, accent.lightened(0.08)))
+	button.add_theme_stylebox_override("pressed", _make_pill_button_style(pressed, Color(1.0, 0.84, 0.56, 1.0)))
+	button.add_theme_stylebox_override("disabled", _make_pill_button_style(Color(0.06, 0.08, 0.11, 0.88), Color(0.2, 0.26, 0.3, 0.7)))
+
+func _make_pill_button_style(fill: Color, border: Color) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = fill
+	style.border_color = border
+	style.set_corner_radius_all(999)
+	style.set_border_width_all(2)
+	style.shadow_color = Color(border.r, border.g, border.b, 0.22)
+	style.shadow_size = 10
+	style.shadow_offset = Vector2(0, 4)
 	style.content_margin_left = 12
 	style.content_margin_right = 12
 	style.content_margin_top = 7
 	style.content_margin_bottom = 7
-	label.add_theme_stylebox_override("normal", style)
+	return style
 
 func _apply_hud_panel_style(panel: PanelContainer, fill: Color, border: Color, radius: int) -> void:
 	var style := StyleBoxFlat.new()

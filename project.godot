@@ -28,6 +28,7 @@ DailyMissionManager="*res://scripts/autoload/daily_mission_manager.gd"
 SeasonEventManager="*res://scripts/autoload/season_event_manager.gd"
 BattlePassManager="*res://scripts/autoload/battle_pass_manager.gd"
 OfferManager="*res://scripts/autoload/offer_manager.gd"
+ShopManager="*res://scripts/autoload/shop_manager.gd"
 RewardFlowManager="*res://scripts/autoload/reward_flow_manager.gd"
 SocialConnectManager="*res://scripts/autoload/social_connect_manager.gd"
 AccountAuthManager="*res://scripts/autoload/account_auth_manager.gd"
@@ -49,7 +50,7 @@ theme/default_theme_scale=1.2
 
 [rendering]
 
-renderer/rendering_method="mobile"
-renderer/rendering_method.mobile="mobile"
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
 textures/canvas_textures/default_texture_filter=0
 environment/defaults/default_clear_color=Color(0.0313726, 0.0431373, 0.0666667, 1)

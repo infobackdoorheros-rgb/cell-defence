@@ -36,3 +36,13 @@ func get_dna_boost_charges() -> int:
 
 func get_dna_boost_multiplier() -> float:
 	return max(1.0, RemoteConfigManager.get_float("reward_flow.dna_boost_multiplier", 2.0))
+
+func get_snapshot_state() -> Dictionary:
+	return {
+		"revive_uses_this_run": revive_uses_this_run,
+		"dna_boost_uses_this_run": dna_boost_uses_this_run
+	}
+
+func restore_snapshot_state(data: Dictionary) -> void:
+	revive_uses_this_run = max(0, int(data.get("revive_uses_this_run", revive_uses_this_run)))
+	dna_boost_uses_this_run = max(0, int(data.get("dna_boost_uses_this_run", dna_boost_uses_this_run)))

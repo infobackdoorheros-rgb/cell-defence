@@ -10,6 +10,7 @@ const HUD = preload("res://scripts/ui/hud.gd")
 const MutationChoicePanel = preload("res://scripts/ui/mutation_choice_panel.gd")
 const GameOverPanel = preload("res://scripts/ui/game_over_panel.gd")
 const FTUEOverlay = preload("res://scripts/ui/ftue_overlay.gd")
+const PauseMenuPanel = preload("res://scripts/ui/pause_menu_panel.gd")
 const RunStats = preload("res://scripts/core/run_stats.gd")
 const MutationData = preload("res://scripts/data/mutation_data.gd")
 const ArenaBackdrop = preload("res://scripts/run/arena_backdrop.gd")
@@ -32,6 +33,7 @@ const RUN_MUSIC_PATH := "res://music.mp3"
 @onready var mutation_panel: MutationChoicePanel = $UI/MutationChoicePanel
 @onready var game_over_panel: GameOverPanel = $UI/GameOverPanel
 @onready var ftue_overlay: FTUEOverlay = $UI/FTUEOverlay
+@onready var pause_menu_panel: PauseMenuPanel = $UI/PauseMenuPanel
 
 var arena_center: Vector2 = Vector2.ZERO
 var arena_radius: float = 260.0
@@ -52,7 +54,11 @@ func _ready() -> void:
 	_update_arena_layout()
 	_wire_scene()
 	_setup_run_music()
-	_start_new_run()
+	var resumed := false
+	if SaveManager.consume_resume_saved_run_request():
+		resumed = _try_resume_saved_run()
+	if not resumed:
+		_start_new_run()
 
 func _process(delta: float) -> void:
 	upgrade_manager.update_runtime_systems(delta, is_gameplay_paused())
@@ -90,6 +96,7 @@ func _wire_scene() -> void:
 
 	hud.upgrade_requested.connect(_on_upgrade_requested)
 	hud.active_skill_requested.connect(_on_active_skill_requested)
+	hud.menu_requested.connect(_on_menu_button_requested)
 	mutation_panel.mutation_selected.connect(_on_mutation_selected)
 	game_over_panel.restart_requested.connect(_on_restart_requested)
 	game_over_panel.meta_requested.connect(_on_meta_requested)
@@ -97,10 +104,17 @@ func _wire_scene() -> void:
 	game_over_panel.revive_requested.connect(_on_revive_requested)
 	game_over_panel.dna_boost_requested.connect(_on_dna_boost_requested)
 	ftue_overlay.dismissed.connect(_on_ftue_dismissed)
+	pause_menu_panel.continue_requested.connect(_on_pause_continue_requested)
+	pause_menu_panel.save_requested.connect(_on_pause_save_requested)
+	pause_menu_panel.exit_requested.connect(_on_pause_exit_requested)
 	SettingsManager.audio_changed.connect(_on_audio_changed)
 	SettingsManager.graphics_mode_changed.connect(_on_graphics_mode_changed)
 
 func _start_new_run() -> void:
+	SaveManager.clear_run_snapshot()
+	_begin_run_state(true)
+
+func _begin_run_state(show_ftue: bool) -> void:
 	gameplay_paused = false
 	run_finished = false
 	_committed_rewards = false
@@ -111,6 +125,7 @@ func _start_new_run() -> void:
 	game_over_panel.hide_panel()
 	mutation_panel.hide_panel()
 	ftue_overlay.hide_overlay()
+	pause_menu_panel.hide_panel()
 	resource_manager.reset_run()
 	mutation_manager.reset_run()
 	upgrade_manager.reset_run()
@@ -125,7 +140,8 @@ func _start_new_run() -> void:
 	AnalyticsManager.start_run(RunConfigManager.selected_core_archetype, RunConfigManager.selected_chapter)
 	_refresh_hud()
 	_refresh_shop()
-	_show_ftue_if_needed()
+	if show_ftue:
+		_show_ftue_if_needed()
 
 func _restart_run() -> void:
 	for projectile in projectile_container.get_children():
@@ -293,16 +309,28 @@ func _on_audio_changed(enabled: bool) -> void:
 	else:
 		_run_music_player.stop()
 
+func _on_menu_button_requested() -> void:
+	if run_finished or mutation_panel.visible or ftue_overlay.visible:
+		return
+	if pause_menu_panel.visible:
+		_on_pause_continue_requested()
+		return
+	gameplay_paused = true
+	pause_menu_panel.show_panel()
+
 func _on_restart_requested() -> void:
 	_finalize_run_rewards()
+	SaveManager.clear_run_snapshot()
 	_restart_run()
 
 func _on_meta_requested() -> void:
 	_finalize_run_rewards()
+	SaveManager.clear_run_snapshot()
 	get_tree().change_scene_to_file("res://scenes/laboratory_scene.tscn")
 
 func _on_menu_requested() -> void:
 	_finalize_run_rewards()
+	SaveManager.clear_run_snapshot()
 	get_tree().change_scene_to_file("res://scenes/main_menu.tscn")
 
 func _on_revive_requested() -> void:
@@ -397,6 +425,23 @@ func _on_graphics_mode_changed(_mode: StringName) -> void:
 		arena_backdrop.queue_redraw()
 	queue_redraw()
 
+func _on_pause_continue_requested() -> void:
+	pause_menu_panel.hide_panel()
+	gameplay_paused = false
+
+func _on_pause_save_requested() -> void:
+	if run_finished:
+		return
+	_save_current_run_snapshot()
+	pause_menu_panel.show_saved_feedback()
+
+func _on_pause_exit_requested() -> void:
+	if not run_finished:
+		_save_current_run_snapshot()
+	pause_menu_panel.hide_panel()
+	gameplay_paused = false
+	get_tree().change_scene_to_file("res://scenes/main_menu.tscn")
+
 func _schedule_next_dna_pickup() -> void:
 	var spawn_bonus: float = upgrade_manager.get_current_stats().dna_crystal_spawn_bonus
 	var min_interval: float = max(3.0, DNA_PICKUP_INTERVAL_MIN * (1.0 - spawn_bonus))
@@ -460,3 +505,46 @@ func _finalize_run_rewards() -> void:
 	_game_over_summary["best_wave"] = MetaProgression.best_wave
 	AnalyticsManager.complete_run(_game_over_summary)
 	_committed_rewards = true
+
+func _save_current_run_snapshot() -> void:
+	var snapshot := {
+		"selected_core_archetype": String(RunConfigManager.selected_core_archetype),
+		"selected_chapter": String(RunConfigManager.selected_chapter),
+		"saved_wave": max(1, wave_manager.current_wave),
+		"dna_spawn_timer": _dna_spawn_timer,
+		"resource_manager": resource_manager.get_snapshot_state(),
+		"mutation_manager": mutation_manager.get_snapshot_state(),
+		"upgrade_manager": upgrade_manager.get_snapshot_state(),
+		"wave_manager": wave_manager.get_snapshot_state(),
+		"core": core.get_snapshot_state(),
+		"reward_flow": RewardFlowManager.get_snapshot_state()
+	}
+	SaveManager.save_run_snapshot(snapshot)
+	hud.show_runtime_event(SettingsManager.t("pause.save_done"))
+
+func _try_resume_saved_run() -> bool:
+	var snapshot := SaveManager.get_run_snapshot()
+	if snapshot.is_empty():
+		return false
+
+	var saved_core := StringName(snapshot.get("selected_core_archetype", String(RunConfigManager.DEFAULT_CORE_ARCHETYPE)))
+	var saved_chapter := StringName(snapshot.get("selected_chapter", String(RunConfigManager.DEFAULT_CHAPTER)))
+	if ContentDB.get_core_archetype(saved_core) != null:
+		RunConfigManager.set_selected_core_archetype(saved_core)
+	if ContentDB.get_chapter(saved_chapter) != null:
+		RunConfigManager.set_selected_chapter(saved_chapter)
+
+	_begin_run_state(false)
+	mutation_manager.restore_snapshot_state(snapshot.get("mutation_manager", {}) as Dictionary)
+	upgrade_manager.restore_snapshot_state(snapshot.get("upgrade_manager", {}) as Dictionary)
+	core.apply_stats(upgrade_manager.get_current_stats())
+	resource_manager.restore_snapshot_state(snapshot.get("resource_manager", {}) as Dictionary)
+	core.restore_snapshot_state(snapshot.get("core", {}) as Dictionary)
+	wave_manager.restore_snapshot_state(snapshot.get("wave_manager", {}) as Dictionary)
+	RewardFlowManager.restore_snapshot_state(snapshot.get("reward_flow", {}) as Dictionary)
+	_dna_spawn_timer = max(0.5, float(snapshot.get("dna_spawn_timer", _dna_spawn_timer)))
+	SaveManager.clear_run_snapshot()
+	hud.show_runtime_event(SettingsManager.t("pause.resume_loaded"))
+	_refresh_hud()
+	_refresh_shop()
+	return true

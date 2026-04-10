@@ -85,6 +85,7 @@ func reset_progress() -> void:
 	SeasonEventManager.load_state()
 	BattlePassManager.load_state()
 	OfferManager.load_state()
+	ShopManager.load_state()
 	AnalyticsManager.load_state()
 
 func register_wave_result(wave_reached: int) -> void:

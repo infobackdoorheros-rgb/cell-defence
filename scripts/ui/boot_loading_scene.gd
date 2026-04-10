@@ -5,6 +5,7 @@ const BioUI = preload("res://scripts/ui/bio_ui.gd")
 const BioBackdrop = preload("res://scripts/ui/bio_backdrop.gd")
 
 const TARGET_SCENE_PATH := "res://scenes/main_menu.tscn"
+const TARGET_SCENE: PackedScene = preload("res://scenes/main_menu.tscn")
 const LOGO_PATH := "res://BackDoorHerosLogo.png"
 const MIN_DISPLAY_TIME := 1.85
 const PROGRESS_LERP_SPEED := 4.8
@@ -176,14 +177,39 @@ func _open_target_scene() -> void:
 	if _switch_queued:
 		return
 	_switch_queued = true
-	get_tree().change_scene_to_file(TARGET_SCENE_PATH)
+	call_deferred("_open_target_scene_deferred")
+
+func _open_target_scene_deferred() -> void:
+	var tree := get_tree()
+	if tree == null:
+		_switch_queued = false
+		return
+	var error := tree.change_scene_to_packed(TARGET_SCENE)
+	if error == OK:
+		return
+
+	_switch_queued = false
+	push_error("Unable to open target scene %s. Error code: %d" % [TARGET_SCENE_PATH, error])
+	if _status_label != null:
+		_status_label.text = "Errore di inizializzazione del protocollo"
+	if _tip_label != null:
+		_tip_label.text = "Riapri l'app. Se il problema continua, reinstalla la build piu recente."
+	if _progress_value_label != null:
+		_progress_value_label.text = "ERR %d" % error
 
 func _load_logo_texture() -> Texture2D:
-	var imported_texture := load(LOGO_PATH)
-	if imported_texture is Texture2D:
-		return imported_texture as Texture2D
+	var global_logo_path := ProjectSettings.globalize_path(LOGO_PATH)
+	if FileAccess.file_exists(global_logo_path):
+		var image := Image.load_from_file(global_logo_path)
+		if image != null and not image.is_empty():
+			return ImageTexture.create_from_image(image)
 
-	var image := Image.load_from_file(ProjectSettings.globalize_path(LOGO_PATH))
+	if ResourceLoader.exists(LOGO_PATH, "Texture2D"):
+		var imported_texture := ResourceLoader.load(LOGO_PATH, "Texture2D")
+		if imported_texture is Texture2D:
+			return imported_texture as Texture2D
+
+	var image := Image.load_from_file(global_logo_path)
 	if image == null or image.is_empty():
 		push_warning("Unable to load logo from %s" % LOGO_PATH)
 		var fallback := Image.create(32, 32, false, Image.FORMAT_RGBA8)
