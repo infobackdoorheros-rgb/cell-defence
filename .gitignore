@@ -6,6 +6,8 @@
 /android/build/.gradle/
 /android/build/build/
 /android/build/libs/
+/android/build/assetPackInstallTime/src/main/assets/*
+!/android/build/assetPackInstallTime/src/main/assets/.gdkeep
 /android/build/assetPackInstallTime/build/
 /android/build/assets/
 /android/build/local.properties
