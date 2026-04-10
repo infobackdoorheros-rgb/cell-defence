@@ -15,7 +15,7 @@ func _ready() -> void:
 	RunConfigManager.selected_chapter = &"chapter_capillary"
 	RunConfigManager.ftue_completed = true
 
-	var run_scene := load("res://scenes/run_scene.tscn").instantiate()
+	var run_scene: RunScene = load("res://scenes/run_scene.tscn").instantiate() as RunScene
 	add_child(run_scene)
 
 	await get_tree().create_timer(2.0).timeout
