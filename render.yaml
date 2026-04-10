@@ -15,6 +15,8 @@ services:
         fromDatabase:
           name: cell-defense-auth-db
           property: connectionString
+      - key: DATABASE_SSL
+        value: "true"
       - key: SESSION_SECRET
         generateValue: true
       - key: TRUST_PROXY
@@ -53,6 +55,8 @@ services:
         value: "5"
       - key: BACKDOOR_MIN_REQUEST_INTERVAL_MS
         value: "60000"
+      - key: STORE_INIT_RETRY_MS
+        value: "15000"
 
 databases:
   - name: cell-defense-auth-db

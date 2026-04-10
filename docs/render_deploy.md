@@ -57,6 +57,7 @@ Per una prima attivazione puoi lasciare Google vuoto e usare solo `BackDoor Hero
 Il backend usa automaticamente:
 
 - `DATABASE_URL` dal database Render creato via blueprint
+- `DATABASE_SSL=true` per il Postgres gestito da Render
 - `RENDER_EXTERNAL_URL` come URL pubblico se `PUBLIC_BASE_URL` non e impostato
 - `TRUST_PROXY=true` per cookie e callback dietro proxy Render
 
@@ -82,6 +83,23 @@ Poi aggiorna [auth_backend.json](C:/Users/matte/Desktop/CELL%20DEFENCE/data/conf
 ```
 
 Ricostruisci poi l'APK.
+
+## Diagnostica rapida
+
+Se il deploy compila ma Render segnala `No open ports detected`, il fix gia incluso nel repo piu recente fa partire il server HTTP subito e inizializza il database in background con retry.
+
+Per controllare lo stato reale del backend apri:
+
+- `https://TUO-SERVIZIO.onrender.com/api/health`
+
+Controlla questi campi:
+
+- `ok: true`
+- `storeReady: true`
+- `storageMode: "postgres"`
+- `emailMode: "smtp"` oppure `emailMode: "resend"`
+
+Se `storeReady` e `false`, il servizio e online ma il database o le env vars non sono ancora corretti: in quel caso il campo `storeError` dell'health endpoint ti dira il motivo.
 
 ## Note ufficiali
 

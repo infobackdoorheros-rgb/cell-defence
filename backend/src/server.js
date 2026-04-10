@@ -38,8 +38,15 @@ const backdoorMaxVerifyAttempts = Number(process.env.BACKDOOR_MAX_VERIFY_ATTEMPT
 const backdoorMinRequestIntervalMs = Number(process.env.BACKDOOR_MIN_REQUEST_INTERVAL_MS || 60000);
 const trustProxy = String(process.env.TRUST_PROXY || (process.env.RENDER ? "true" : "false")) === "true";
 const googleCallbackUrl = process.env.GOOGLE_CALLBACK_URL || `${publicBaseUrl}/auth/google/web/callback`;
+const storeInitRetryMs = Number(process.env.STORE_INIT_RETRY_MS || 15000);
 
 const emailProvider = createEmailProvider({ supportEmail });
+const storeState = {
+  ready: false,
+  initializing: false,
+  lastError: "",
+  lastCheckedAt: ""
+};
 
 if (nodeEnv === "production" && !process.env.SESSION_SECRET) {
   throw new Error("SESSION_SECRET is required in production.");
@@ -150,7 +157,11 @@ app.get("/api/health", (_req, res) => {
     mode: googleConfigured ? "google+email" : "email-only",
     publicBaseUrl,
     storageMode: getStoreMode(),
-    emailMode: emailProvider.getMode()
+    emailMode: emailProvider.getMode(),
+    storeReady: storeState.ready,
+    storeInitializing: storeState.initializing,
+    storeError: storeState.lastError,
+    storeLastCheckedAt: storeState.lastCheckedAt
   });
 });
 
@@ -407,14 +418,33 @@ app.use((error, _req, res, _next) => {
   return jsonError(res, 500, "account.error_backend_unreachable");
 });
 
-initStore().then(() => {
-  app.listen(port, () => {
-    console.log(`Cell Defense auth backend listening on ${publicBaseUrl}`);
-    console.log(`Google configured: ${googleConfigured}`);
-    console.log(`Email provider mode: ${emailProvider.getMode()}`);
-    console.log(`Storage mode: ${getStoreMode()}`);
-  });
-}).catch((error) => {
-  console.error("Unable to initialize auth store", error);
-  process.exit(1);
+async function warmStore() {
+  if (storeState.initializing || storeState.ready) {
+    return;
+  }
+
+  storeState.initializing = true;
+  storeState.lastCheckedAt = new Date().toISOString();
+  try {
+    await initStore();
+    storeState.ready = true;
+    storeState.lastError = "";
+    console.log("Auth store initialized successfully");
+  } catch (error) {
+    storeState.ready = false;
+    storeState.lastError = error instanceof Error ? error.message : String(error);
+    console.error("Unable to initialize auth store", error);
+    setTimeout(warmStore, storeInitRetryMs);
+  } finally {
+    storeState.initializing = false;
+    storeState.lastCheckedAt = new Date().toISOString();
+  }
+}
+
+app.listen(port, "0.0.0.0", () => {
+  console.log(`Cell Defense auth backend listening on ${publicBaseUrl}`);
+  console.log(`Google configured: ${googleConfigured}`);
+  console.log(`Email provider mode: ${emailProvider.getMode()}`);
+  console.log(`Storage mode: ${getStoreMode()}`);
+  warmStore();
 });

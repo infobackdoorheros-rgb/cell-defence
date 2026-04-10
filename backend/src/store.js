@@ -65,6 +65,9 @@ function getPool() {
   if (!pool) {
     pool = new Pool({
       connectionString: DATABASE_URL,
+      connectionTimeoutMillis: Number(process.env.DATABASE_CONNECTION_TIMEOUT_MS || 10000),
+      idleTimeoutMillis: Number(process.env.DATABASE_IDLE_TIMEOUT_MS || 30000),
+      max: Number(process.env.DATABASE_POOL_MAX || 4),
       ssl: String(process.env.DATABASE_SSL || "").toLowerCase() === "true"
         ? { rejectUnauthorized: false }
         : undefined
