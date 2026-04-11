@@ -9,7 +9,7 @@ const DEFAULT_BACKEND_CONFIG := {
 	"mode": "remote",
 	"base_url": "",
 	"public_base_url": "",
-	"request_timeout_seconds": 15.0,
+	"request_timeout_seconds": 75.0,
 	"google_device_flow_enabled": false,
 	"allow_local_fallback": false
 }
@@ -17,6 +17,7 @@ const DEFAULT_BACKEND_CONFIG := {
 var _auth_state: Dictionary = {}
 var _backend_config: Dictionary = {}
 var _rng := RandomNumberGenerator.new()
+var _backend_ready_until_msec: int = 0
 
 func _ready() -> void:
 	_rng.randomize()
@@ -81,6 +82,9 @@ func get_google_device_summary() -> Dictionary:
 
 func start_google_signin() -> Dictionary:
 	if is_remote_backend_enabled():
+		var warmup := await ping_backend()
+		if not bool(warmup.get("ok", false)):
+			return warmup
 		return await _start_google_signin_remote()
 	if not _allow_local_fallback():
 		return {
@@ -99,6 +103,9 @@ func start_google_signin() -> Dictionary:
 
 func start_backdoor_registration(display_name: String, email: String, location: String) -> Dictionary:
 	if is_remote_backend_enabled():
+		var warmup := await ping_backend()
+		if not bool(warmup.get("ok", false)):
+			return warmup
 		return await _start_backdoor_registration_remote(display_name, email, location)
 	if not _allow_local_fallback():
 		return {
@@ -110,6 +117,9 @@ func start_backdoor_registration(display_name: String, email: String, location: 
 
 func verify_backdoor_code(code: String) -> Dictionary:
 	if is_remote_backend_enabled():
+		var warmup := await ping_backend()
+		if not bool(warmup.get("ok", false)):
+			return warmup
 		return await _verify_backdoor_code_remote(code)
 
 	return _verify_backdoor_code_local(code)
@@ -127,6 +137,10 @@ func poll_google_status() -> Dictionary:
 			"ok": false,
 			"message_key": "account.google_unavailable"
 		}
+
+	var warmup := await ping_backend()
+	if not bool(warmup.get("ok", false)):
+		return warmup
 
 	var response := await _request_json(
 		HTTPClient.METHOD_GET,
@@ -167,6 +181,29 @@ func poll_google_status() -> Dictionary:
 func logout() -> void:
 	_auth_state = _merge_defaults({})
 	_save_state()
+
+func ping_backend(force: bool = false) -> Dictionary:
+	if not is_remote_backend_enabled():
+		return {
+			"ok": false,
+			"message_key": "account.backend_not_configured"
+		}
+	var now := Time.get_ticks_msec()
+	if not force and now < _backend_ready_until_msec:
+		return {
+			"ok": true,
+			"message_key": "account.backend_ready"
+		}
+	var response := await _request_json(HTTPClient.METHOD_GET, "/api/health")
+	if bool(response.get("ok", false)):
+		var payload := response.get("payload", {}) as Dictionary
+		if bool(payload.get("ok", false)):
+			_backend_ready_until_msec = now + 120000
+			return {
+				"ok": true,
+				"message_key": "account.backend_ready"
+			}
+	return response
 
 func get_pending_summary() -> Dictionary:
 	return {
@@ -397,6 +434,7 @@ func _request_json(method: int, endpoint: String, payload: Dictionary = {}) -> D
 	var result: Array = await request.request_completed
 	request.queue_free()
 
+	var request_result := int(result[0])
 	var response_code := int(result[1])
 	var response_bytes := result[3] as PackedByteArray
 	var parsed: Variant = {}
@@ -406,15 +444,25 @@ func _request_json(method: int, endpoint: String, payload: Dictionary = {}) -> D
 		parsed = {}
 	var payload_dict := parsed as Dictionary
 
+	if request_result != HTTPRequest.RESULT_SUCCESS:
+		var timeout_key := "account.error_backend_timeout" if request_result == HTTPRequest.RESULT_TIMEOUT else "account.error_backend_unreachable"
+		return {
+			"ok": false,
+			"message_key": timeout_key,
+			"detail": "HTTPRequest result %d" % request_result
+		}
+
 	if response_code < 200 or response_code >= 300:
 		return {
 			"ok": false,
-			"message_key": String(payload_dict.get("messageKey", "account.error_backend_unreachable"))
+			"message_key": String(payload_dict.get("messageKey", "account.error_backend_unreachable")),
+			"detail": String(payload_dict.get("detail", ""))
 		}
 
 	return {
 		"ok": bool(payload_dict.get("ok", true)),
-		"payload": payload_dict
+		"payload": payload_dict,
+		"detail": String(payload_dict.get("detail", ""))
 	}
 
 func _save_state() -> void:

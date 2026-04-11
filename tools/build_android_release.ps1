@@ -4,8 +4,8 @@ param(
     [Parameter(Mandatory = $true)][string]$KeystorePassword,
     [Parameter(Mandatory = $true)][string]$KeyAlias,
     [string]$PackageName = "com.backdoorheroes.celldefensecoreimmunity",
-    [string]$VersionName = "0.3.1",
-    [int]$VersionCode = 13,
+    [string]$VersionName = "0.3.2",
+    [int]$VersionCode = 14,
     [string[]]$EnabledAbis = @("arm64-v8a"),
     [switch]$SkipAab
 )

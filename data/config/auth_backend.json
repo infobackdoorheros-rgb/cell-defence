@@ -2,7 +2,7 @@
 	"mode": "remote",
 	"base_url": "https://cell-defense-auth-backend.onrender.com",
 	"public_base_url": "https://cell-defense-auth-backend.onrender.com",
-	"request_timeout_seconds": 15.0,
+	"request_timeout_seconds": 75.0,
 	"google_device_flow_enabled": true,
 	"allow_local_fallback": false
 }

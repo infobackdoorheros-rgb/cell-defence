@@ -213,9 +213,13 @@ app.post("/api/auth/backdoor/register", handleAsync(async (req, res) => {
   try {
     await emailProvider.sendRegistrationEmails({ displayName, email, location, code, requestedAt });
   } catch (error) {
+    const detail = String(error.message || error);
     if (!devExposeCodes) {
-      return jsonError(res, 500, "account.error_backend_unreachable", {
-        detail: String(error.message || error)
+      const messageKey = detail.includes("ENOTFOUND") || detail.includes("EAUTH")
+        ? "account.error_email_delivery_unavailable"
+        : "account.error_backend_unreachable";
+      return jsonError(res, 500, messageKey, {
+        detail
       });
     }
   }

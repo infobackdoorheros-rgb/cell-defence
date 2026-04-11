@@ -25,6 +25,7 @@ var _verify_button: Button
 var _helper_label: Label
 var _logout_button: Button
 var _back_button: Button
+var _backend_warmup_running := false
 
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -38,6 +39,8 @@ func _ready() -> void:
 		AccountAuthManager.auth_state_changed.connect(_refresh_ui)
 
 	_refresh_ui()
+	if AccountAuthManager.is_remote_backend_enabled():
+		_warm_backend()
 
 func _build_ui() -> void:
 	var backdrop := BioBackdrop.new()
@@ -288,6 +291,18 @@ func _refresh_ui(_unused = null) -> void:
 	else:
 		_helper_label.text = _google_note.text
 
+func _warm_backend() -> void:
+	if _backend_warmup_running:
+		return
+	_backend_warmup_running = true
+	_message_label.text = SettingsManager.t("account.backend_warming")
+	var result := await AccountAuthManager.ping_backend()
+	_backend_warmup_running = false
+	if not bool(result.get("ok", false)):
+		_apply_message_result(result)
+	elif AccountAuthManager.get_status() == &"guest":
+		_message_label.text = SettingsManager.t("account.backend_ready")
+
 func _on_google_pressed() -> void:
 	_google_button.disabled = true
 	var result := await AccountAuthManager.start_google_signin()
@@ -326,5 +341,9 @@ func _on_logout_pressed() -> void:
 func _apply_message_result(result: Dictionary) -> void:
 	var key := String(result.get("message_key", ""))
 	if not key.is_empty():
-		_message_label.text = SettingsManager.t(key)
+		var text := SettingsManager.t(key)
+		var detail := String(result.get("detail", "")).strip_edges()
+		if not detail.is_empty() and (OS.has_feature("editor") or OS.is_debug_build()):
+			text += "\n%s" % detail
+		_message_label.text = text
 	_refresh_ui()
