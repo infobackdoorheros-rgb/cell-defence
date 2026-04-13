@@ -9,6 +9,10 @@ var _subtitle_label: Label
 var _status_chip: Label
 var _message_label: Label
 
+var _play_games_title: Label
+var _play_games_note: Label
+var _play_games_button: Button
+
 var _google_title: Label
 var _google_note: Label
 var _google_button: Button
@@ -104,6 +108,28 @@ func _build_ui() -> void:
 	content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	content.add_theme_constant_override("separation", 14)
 	scroll.add_child(content)
+
+	var play_games_panel := PanelContainer.new()
+	BioUI.style_panel(play_games_panel, Color(0.07, 0.14, 0.1, 0.94), Color(0.42, 0.96, 0.56, 0.82), 24, 16)
+	content.add_child(play_games_panel)
+
+	var play_games_box := VBoxContainer.new()
+	play_games_box.add_theme_constant_override("separation", 10)
+	play_games_panel.add_child(play_games_box)
+
+	_play_games_title = Label.new()
+	BioUI.style_heading(_play_games_title, Color(0.42, 0.96, 0.56, 1.0), 24)
+	play_games_box.add_child(_play_games_title)
+
+	_play_games_note = Label.new()
+	_play_games_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	BioUI.style_subtitle(_play_games_note, 16)
+	play_games_box.add_child(_play_games_note)
+
+	_play_games_button = Button.new()
+	BioUI.style_button(_play_games_button, Color(0.42, 0.96, 0.56, 1.0), 70.0)
+	_play_games_button.pressed.connect(_on_play_games_pressed)
+	play_games_box.add_child(_play_games_button)
 
 	var google_panel := PanelContainer.new()
 	BioUI.style_panel(google_panel, Color(0.08, 0.12, 0.18, 0.92), Color(0.46, 0.82, 1.0, 0.76), 24, 16)
@@ -202,6 +228,8 @@ func _build_ui() -> void:
 func _refresh_ui(_unused = null) -> void:
 	_title_label.text = SettingsManager.t("account.title")
 	_subtitle_label.text = SettingsManager.t("account.subtitle")
+	_play_games_title.text = SettingsManager.t("account.play_games_title")
+	_play_games_button.text = SettingsManager.t("account.play_games_button")
 	_google_title.text = SettingsManager.t("account.google_title")
 	_google_note.text = SettingsManager.t("account.google_note")
 	_google_button.text = SettingsManager.t("account.google_button")
@@ -241,9 +269,9 @@ func _refresh_ui(_unused = null) -> void:
 				String(pending.get("email", "")),
 				String(pending.get("location", "")),
 				String(pending.get("requested_at", ""))
-			]
+		]
 		&"authenticated":
-			var provider_name := "BackDoor Heroes" if provider == "backdoor" else "Google"
+			var provider_name := _get_provider_display_name(provider)
 			_status_chip.text = SettingsManager.t("account.status_authenticated") % [provider_name]
 			_message_label.text = SettingsManager.t("account.authenticated_hint") % [
 				display_name,
@@ -255,9 +283,21 @@ func _refresh_ui(_unused = null) -> void:
 			if _message_label.text.is_empty():
 				_message_label.text = ""
 
+	var play_games_note := SettingsManager.t("account.play_games_note")
+	if not AccountAuthManager.is_play_games_enabled():
+		play_games_note = SettingsManager.t("account.play_games_unavailable")
+	elif OS.get_name() != "Android":
+		play_games_note = SettingsManager.t("account.play_games_android_only")
+	elif not AccountAuthManager.has_play_games_server_client_id():
+		play_games_note = SettingsManager.t("account.play_games_missing_server_client_id")
+	elif not AccountAuthManager.is_play_games_runtime_available():
+		play_games_note = SettingsManager.t("account.play_games_plugin_missing")
+	_play_games_note.text = play_games_note
+
 	_logout_button.visible = status != &"guest"
 	_verify_button.disabled = status != &"pending_backdoor"
 	_google_check_button.visible = status == &"pending_google" and AccountAuthManager.is_remote_backend_enabled()
+	_play_games_button.disabled = not AccountAuthManager.can_start_play_games_signin()
 	_google_button.disabled = AccountAuthManager.is_remote_backend_enabled() and not AccountAuthManager.is_google_available()
 
 	if status == &"pending_backdoor":
@@ -291,6 +331,15 @@ func _refresh_ui(_unused = null) -> void:
 	else:
 		_helper_label.text = _google_note.text
 
+func _get_provider_display_name(provider: String) -> String:
+	match provider:
+		"backdoor":
+			return "BackDoor Heroes"
+		"play_games":
+			return "Play Giochi"
+		_:
+			return "Google"
+
 func _warm_backend() -> void:
 	if _backend_warmup_running:
 		return
@@ -302,6 +351,13 @@ func _warm_backend() -> void:
 		_apply_message_result(result)
 	elif AccountAuthManager.get_status() == &"guest":
 		_message_label.text = SettingsManager.t("account.backend_ready")
+
+func _on_play_games_pressed() -> void:
+	_play_games_button.disabled = true
+	_message_label.text = SettingsManager.t("account.backend_warming")
+	var result := await AccountAuthManager.start_play_games_signin()
+	_play_games_button.disabled = not AccountAuthManager.can_start_play_games_signin()
+	_apply_message_result(result)
 
 func _on_google_pressed() -> void:
 	_google_button.disabled = true

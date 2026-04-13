@@ -51,8 +51,19 @@ In piu il repository ora ha anche un [package.json](C:/Users/matte/Desktop/CELL%
 - `GOOGLE_CLIENT_ID`
 - `GOOGLE_CLIENT_SECRET`
 - `GOOGLE_CALLBACK_URL`
+- `PLAY_GAMES_SERVER_CLIENT_ID`
+- `PLAY_GAMES_SERVER_CLIENT_SECRET`
 
-Per una prima attivazione puoi lasciare Google vuoto e usare solo `BackDoor Heroes` email auth.
+Per una prima attivazione puoi lasciare Google web vuoto e usare solo `BackDoor Heroes` email auth.
+
+Per attivare `Play Giochi` Android:
+
+- `PLAY_GAMES_SERVER_CLIENT_ID` deve essere il `Web OAuth Client ID`
+- `PLAY_GAMES_SERVER_CLIENT_SECRET` deve essere il secret dello stesso client
+- in [auth_backend.json](C:/Users/matte/Desktop/CELL%20DEFENCE/data/config/auth_backend.json) vanno poi inseriti anche:
+  - `play_games_enabled: true`
+  - `play_games_server_client_id`
+  - `play_games_android_game_id`
 
 Il backend usa automaticamente:
 
@@ -78,6 +89,9 @@ Poi aggiorna [auth_backend.json](C:/Users/matte/Desktop/CELL%20DEFENCE/data/conf
   "public_base_url": "https://cell-defense-auth-backend.onrender.com",
   "request_timeout_seconds": 15.0,
   "google_device_flow_enabled": true,
+  "play_games_enabled": true,
+  "play_games_server_client_id": "WEB_CLIENT_ID.apps.googleusercontent.com",
+  "play_games_android_game_id": "123456789012",
   "allow_local_fallback": false
 }
 ```

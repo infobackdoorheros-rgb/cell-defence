@@ -49,6 +49,10 @@ services:
         sync: false
       - key: GOOGLE_CALLBACK_URL
         sync: false
+      - key: PLAY_GAMES_SERVER_CLIENT_ID
+        sync: false
+      - key: PLAY_GAMES_SERVER_CLIENT_SECRET
+        sync: false
       - key: DEV_EXPOSE_CODES
         value: "false"
       - key: BACKDOOR_MAX_VERIFY_ATTEMPTS

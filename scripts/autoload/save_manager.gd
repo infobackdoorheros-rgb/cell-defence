@@ -48,7 +48,10 @@ func get_default_save() -> Dictionary:
 			"pending_requested_at": "",
 			"google_device_code": "",
 			"google_user_code": "",
-			"google_verification_url": ""
+			"google_verification_url": "",
+			"play_games_player_id": "",
+			"play_games_title": "",
+			"play_games_icon_uri": ""
 		},
 		"settings": {
 			"audio_enabled": true,

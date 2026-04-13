@@ -4,5 +4,9 @@
 	"public_base_url": "https://cell-defense-auth-backend.onrender.com",
 	"request_timeout_seconds": 75.0,
 	"google_device_flow_enabled": true,
+	"play_games_enabled": true,
+	"play_games_server_client_id": "",
+	"play_games_android_game_id": "",
+	"play_games_force_refresh_token": false,
 	"allow_local_fallback": false
 }

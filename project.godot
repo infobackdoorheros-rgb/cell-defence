@@ -11,6 +11,7 @@ config_version=5
 [application]
 
 config/name="Cell Defense: Core Immunity"
+config/version="0.3.2"
 run/main_scene="res://scenes/boot_loading_scene.tscn"
 config/features=PackedStringArray("4.5")
 config/icon="res://icon.svg"
@@ -31,6 +32,8 @@ OfferManager="*res://scripts/autoload/offer_manager.gd"
 ShopManager="*res://scripts/autoload/shop_manager.gd"
 RewardFlowManager="*res://scripts/autoload/reward_flow_manager.gd"
 SocialConnectManager="*res://scripts/autoload/social_connect_manager.gd"
+GodotPlayGameServices="*res://addons/GodotPlayGameServices/scripts/autoloads/godot_play_game_services.gd"
+PlayGamesAuthManager="*res://scripts/autoload/play_games_auth_manager.gd"
 AccountAuthManager="*res://scripts/autoload/account_auth_manager.gd"
 SettingsManager="*res://scripts/autoload/settings_manager.gd"
 

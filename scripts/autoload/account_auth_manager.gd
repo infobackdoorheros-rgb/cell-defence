@@ -11,6 +11,10 @@ const DEFAULT_BACKEND_CONFIG := {
 	"public_base_url": "",
 	"request_timeout_seconds": 75.0,
 	"google_device_flow_enabled": false,
+	"play_games_enabled": false,
+	"play_games_server_client_id": "",
+	"play_games_android_game_id": "",
+	"play_games_force_refresh_token": false,
 	"allow_local_fallback": false
 }
 
@@ -54,6 +58,23 @@ func is_google_available() -> bool:
 		return bool(_backend_config.get("google_device_flow_enabled", false))
 	return _allow_local_fallback()
 
+func is_play_games_enabled() -> bool:
+	return bool(_backend_config.get("play_games_enabled", false))
+
+func has_play_games_server_client_id() -> bool:
+	return not String(_backend_config.get("play_games_server_client_id", "")).strip_edges().is_empty()
+
+func is_play_games_runtime_available() -> bool:
+	if not is_play_games_enabled():
+		return false
+	var manager := get_node_or_null("/root/PlayGamesAuthManager")
+	if manager == null:
+		return false
+	return manager.is_available()
+
+func can_start_play_games_signin() -> bool:
+	return is_play_games_runtime_available() and has_play_games_server_client_id()
+
 func is_authenticated() -> bool:
 	return String(_auth_state.get("status", "guest")) == "authenticated"
 
@@ -78,6 +99,83 @@ func get_google_device_summary() -> Dictionary:
 		"user_code": String(_auth_state.get("google_user_code", "")),
 		"verification_url": String(_auth_state.get("google_verification_url", "")),
 		"device_code": String(_auth_state.get("google_device_code", ""))
+	}
+
+func start_play_games_signin() -> Dictionary:
+	if not is_play_games_enabled():
+		return {
+			"ok": false,
+			"message_key": "account.play_games_unavailable"
+		}
+	if not is_play_games_runtime_available():
+		return {
+			"ok": false,
+			"message_key": "account.play_games_plugin_missing" if OS.get_name() == "Android" else "account.play_games_android_only"
+		}
+	if not has_play_games_server_client_id():
+		return {
+			"ok": false,
+			"message_key": "account.play_games_missing_server_client_id"
+		}
+
+	var flow_result := await PlayGamesAuthManager.start_authentication(
+		String(_backend_config.get("play_games_server_client_id", "")),
+		bool(_backend_config.get("play_games_force_refresh_token", false))
+	)
+	if not bool(flow_result.get("ok", false)):
+		return flow_result
+
+	var player_profile := flow_result.get("player_profile", {}) as Dictionary
+	if player_profile.is_empty():
+		return {
+			"ok": false,
+			"message_key": "account.play_games_player_unavailable"
+		}
+
+	if is_remote_backend_enabled():
+		var warmup := await ping_backend()
+		if not bool(warmup.get("ok", false)):
+			return warmup
+
+		var response := await _request_json(HTTPClient.METHOD_POST, "/api/auth/playgames/android", {
+			"serverAuthCode": String(flow_result.get("server_auth_code", "")),
+			"playGamesPlayerId": String(player_profile.get("playGamesPlayerId", "")),
+			"displayName": String(player_profile.get("displayName", "")),
+			"title": String(player_profile.get("title", "")),
+			"iconImageUri": String(player_profile.get("iconImageUri", ""))
+		})
+		if not bool(response.get("ok", false)):
+			return response
+
+		var payload := response.get("payload", {}) as Dictionary
+		var profile := payload.get("profile", {}) as Dictionary
+		_apply_authenticated_profile("play_games", profile)
+		return {
+			"ok": true,
+			"message_key": String(payload.get("messageKey", "account.play_games_verified"))
+		}
+
+	if not _allow_local_fallback():
+		return {
+			"ok": false,
+			"message_key": "account.backend_not_configured"
+		}
+
+	var local_profile := {
+		"playerId": "playgames-local-%06d" % _rng.randi_range(100000, 999999),
+		"displayName": String(player_profile.get("displayName", "Play Games Pilot")),
+		"email": "",
+		"location": "",
+		"registeredAt": Time.get_datetime_string_from_system(),
+		"playGamesPlayerId": String(player_profile.get("playGamesPlayerId", "")),
+		"playGamesTitle": String(player_profile.get("title", "")),
+		"playGamesIconImageUri": String(player_profile.get("iconImageUri", "")),
+		"authenticatedAt": Time.get_datetime_string_from_system()
+	}
+	_apply_authenticated_profile("play_games", local_profile)
+	return {
+		"ok": true,
+		"message_key": "account.play_games_verified"
 	}
 
 func start_google_signin() -> Dictionary:
@@ -153,12 +251,7 @@ func poll_google_status() -> Dictionary:
 	var status := String(payload.get("status", "pending"))
 	if status == "authenticated":
 		var profile := payload.get("profile", {}) as Dictionary
-		_auth_state["provider"] = "google"
-		_auth_state["status"] = "authenticated"
-		_auth_state["display_name"] = String(profile.get("displayName", "Google Pilot"))
-		_auth_state["email"] = String(profile.get("email", ""))
-		_clear_pending_state()
-		_save_state()
+		_apply_authenticated_profile("google", profile)
 		return {
 			"ok": true,
 			"message_key": String(payload.get("messageKey", "account.verified"))
@@ -308,15 +401,7 @@ func _verify_backdoor_code_remote(code: String) -> Dictionary:
 
 	var payload := response.get("payload", {}) as Dictionary
 	var profile := payload.get("profile", {}) as Dictionary
-	_auth_state["provider"] = "backdoor"
-	_auth_state["status"] = "authenticated"
-	_auth_state["player_id"] = String(profile.get("playerId", ""))
-	_auth_state["display_name"] = String(profile.get("displayName", _auth_state.get("pending_display_name", "")))
-	_auth_state["email"] = String(profile.get("email", pending_email))
-	_auth_state["location"] = String(profile.get("location", _auth_state.get("pending_location", "")))
-	_auth_state["registered_at"] = String(profile.get("registeredAt", Time.get_datetime_string_from_system()))
-	_clear_pending_state()
-	_save_state()
+	_apply_authenticated_profile("backdoor", profile)
 
 	return {
 		"ok": true,
@@ -396,6 +481,9 @@ func _verify_backdoor_code_local(code: String) -> Dictionary:
 	_auth_state["email"] = String(_auth_state.get("pending_email", ""))
 	_auth_state["location"] = String(_auth_state.get("pending_location", ""))
 	_auth_state["registered_at"] = Time.get_datetime_string_from_system()
+	_auth_state["play_games_player_id"] = ""
+	_auth_state["play_games_title"] = ""
+	_auth_state["play_games_icon_uri"] = ""
 	_clear_pending_state()
 	_save_state()
 	return {
@@ -471,6 +559,20 @@ func _save_state() -> void:
 	})
 	auth_state_changed.emit()
 
+func _apply_authenticated_profile(provider: String, profile: Dictionary) -> void:
+	_auth_state["provider"] = provider
+	_auth_state["status"] = "authenticated"
+	_auth_state["player_id"] = String(profile.get("playerId", _auth_state.get("player_id", "")))
+	_auth_state["display_name"] = String(profile.get("displayName", _auth_state.get("pending_display_name", "")))
+	_auth_state["email"] = String(profile.get("email", ""))
+	_auth_state["location"] = String(profile.get("location", _auth_state.get("pending_location", "")))
+	_auth_state["registered_at"] = String(profile.get("registeredAt", Time.get_datetime_string_from_system()))
+	_auth_state["play_games_player_id"] = String(profile.get("playGamesPlayerId", ""))
+	_auth_state["play_games_title"] = String(profile.get("playGamesTitle", ""))
+	_auth_state["play_games_icon_uri"] = String(profile.get("playGamesIconImageUri", ""))
+	_clear_pending_state()
+	_save_state()
+
 func _clear_pending_state() -> void:
 	_auth_state["pending_display_name"] = ""
 	_auth_state["pending_email"] = ""
@@ -497,7 +599,10 @@ func _merge_defaults(data: Dictionary) -> Dictionary:
 		"pending_requested_at": "",
 		"google_device_code": "",
 		"google_user_code": "",
-		"google_verification_url": ""
+		"google_verification_url": "",
+		"play_games_player_id": "",
+		"play_games_title": "",
+		"play_games_icon_uri": ""
 	}
 	for key in data.keys():
 		merged[key] = data[key]

@@ -222,7 +222,7 @@ const _TRANSLATIONS := {
 		"options.audio_on": "Audio: Si",
 		"options.audio_off": "Audio: No",
 		"options.graphics_title": "Grafica Mobile",
-		"options.graphics_note": "Auto usa il profilo sicuro su Android per evitare artefatti come linee e banding sui device più sensibili.",
+		"options.graphics_note": "Auto usa il profilo sicuro su mobile per evitare artefatti come linee e banding sui device più sensibili.",
 		"options.graphics_cycle": "Profilo grafico: %s",
 		"options.language_title": "Lingua di gioco",
 		"options.language_note": "La lingua aggiorna l'interfaccia del gioco e dei menu principali.",
@@ -237,6 +237,21 @@ const _TRANSLATIONS := {
 		"account.status_pending_google": "Stato: Google in attesa di backend",
 		"account.status_pending_backdoor": "Stato: verifica BackDoor Heroes in corso",
 		"account.status_authenticated": "Stato: autenticato con %s",
+		"account.play_games_title": "Login Play Giochi",
+		"account.play_games_note": "Accedi con il profilo Google Play Giochi per collegare in modo nativo il giocatore Android e preparare restore e progressi cloud.",
+		"account.play_games_button": "Accedi con Play Giochi",
+		"account.play_games_android_only": "Play Giochi e disponibile solo su Android.",
+		"account.play_games_unavailable": "Play Giochi non e abilitato nella configurazione del backend.",
+		"account.play_games_plugin_missing": "Plugin Play Giochi non disponibile in questa build. Ricompila Android con il plugin attivo.",
+		"account.play_games_missing_server_client_id": "Configura il Web Client ID Play Giochi in auth_backend.json e nelle env vars di Render.",
+		"account.play_games_missing_server_code": "Play Giochi non ha restituito il codice server. Controlla Web Client ID e Play Console.",
+		"account.play_games_signin_cancelled": "Accesso Play Giochi annullato o non completato.",
+		"account.play_games_player_unavailable": "Profilo Play Giochi non disponibile.",
+		"account.play_games_timed_out": "Play Giochi non ha risposto in tempo. Riprova.",
+		"account.play_games_backend_unavailable": "Backend Play Giochi non configurato. Aggiungi le credenziali server su Render.",
+		"account.play_games_invalid_server_code": "Codice Play Giochi non valido o scaduto.",
+		"account.play_games_identity_mismatch": "Il profilo Play Giochi verificato non coincide con la richiesta client.",
+		"account.play_games_verified": "Account Play Giochi verificato.",
 		"account.google_title": "Google Login",
 		"account.google_note": "Apri Google nel browser, completa l'accesso e poi torna qui per controllare lo stato del login.",
 		"account.google_button": "Apri Google",
@@ -508,7 +523,7 @@ const _TRANSLATIONS := {
 		"options.audio_on": "Audio: On",
 		"options.audio_off": "Audio: Off",
 		"options.graphics_title": "Mobile Graphics",
-		"options.graphics_note": "Auto uses the safe mobile profile on Android to reduce artifacts such as horizontal lines and banding on sensitive devices.",
+		"options.graphics_note": "Auto uses the safe mobile profile on iPhone, iPad and Android to reduce artifacts such as horizontal lines and banding on sensitive devices.",
 		"options.graphics_cycle": "Graphics profile: %s",
 		"options.language_title": "Game Language",
 		"options.language_note": "Language updates the core UI across menus and the in-run interface.",
@@ -523,6 +538,21 @@ const _TRANSLATIONS := {
 		"account.status_pending_google": "Status: Google awaiting backend",
 		"account.status_pending_backdoor": "Status: BackDoor Heroes verification pending",
 		"account.status_authenticated": "Status: authenticated with %s",
+		"account.play_games_title": "Play Games Login",
+		"account.play_games_note": "Sign in with the Google Play Games profile to link the native Android player identity and prepare cloud restore support.",
+		"account.play_games_button": "Sign in with Play Games",
+		"account.play_games_android_only": "Play Games is available only on Android.",
+		"account.play_games_unavailable": "Play Games is not enabled in the backend configuration.",
+		"account.play_games_plugin_missing": "Play Games plugin is missing from this build. Rebuild Android with the plugin enabled.",
+		"account.play_games_missing_server_client_id": "Configure the Play Games Web Client ID in auth_backend.json and in Render env vars.",
+		"account.play_games_missing_server_code": "Play Games did not return the server auth code. Check the Web Client ID and Play Console setup.",
+		"account.play_games_signin_cancelled": "Play Games sign-in was cancelled or not completed.",
+		"account.play_games_player_unavailable": "Play Games player profile is unavailable.",
+		"account.play_games_timed_out": "Play Games did not answer in time. Please retry.",
+		"account.play_games_backend_unavailable": "Play Games backend is not configured. Add the server credentials on Render.",
+		"account.play_games_invalid_server_code": "Play Games server auth code is invalid or expired.",
+		"account.play_games_identity_mismatch": "The verified Play Games player does not match the client request.",
+		"account.play_games_verified": "Play Games account verified.",
 		"account.google_title": "Google Login",
 		"account.google_note": "Open Google in your browser, complete sign-in there, then return here to check login status.",
 		"account.google_button": "Open Google",
@@ -662,7 +692,8 @@ func use_mobile_safe_visuals() -> bool:
 		&"elite":
 			return false
 		_:
-			return OS.get_name() == "Android"
+			var platform := OS.get_name()
+			return platform == "Android" or platform == "iOS"
 
 func t(key: String) -> String:
 	var lang_dict := _TRANSLATIONS.get(String(language), {}) as Dictionary

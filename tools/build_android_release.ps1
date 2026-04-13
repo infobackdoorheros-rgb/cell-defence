@@ -61,6 +61,7 @@ $distRoot = Join-Path $ProjectRoot "dist\\android"
 
 $runtimeDirs = @(
     ".godot",
+    "addons",
     "data",
     "scenes",
     "scripts"
@@ -107,6 +108,33 @@ function Sync-RuntimeAssets {
     Set-Content -LiteralPath (Join-Path $assetPackRoot ".gdkeep") -Value "." -NoNewline
 }
 
+function Sync-PlayGamesConfig {
+    $configPath = Join-Path $ProjectRoot "data\\config\\auth_backend.json"
+    $gameId = "0"
+
+    if (Test-Path -LiteralPath $configPath) {
+        try {
+            $config = Get-Content -LiteralPath $configPath -Raw | ConvertFrom-Json
+            $candidate = [string]$config.play_games_android_game_id
+            if (-not [string]::IsNullOrWhiteSpace($candidate)) {
+                $gameId = $candidate.Trim()
+            }
+        } catch {
+            Write-Warning "Unable to parse auth backend config for Play Games Game ID. Using fallback 0."
+        }
+    }
+
+    $valuesDir = Join-Path $gradleRoot "res\\values"
+    $null = New-Item -ItemType Directory -Path $valuesDir -Force
+    $xml = @"
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string translatable="false" name="game_services_project_id">$gameId</string>
+</resources>
+"@
+    Set-Content -LiteralPath (Join-Path $valuesDir "strings.xml") -Value $xml -Encoding UTF8
+}
+
 if (-not $env:JAVA_HOME) {
     $bundledJdk = Join-Path $ProjectRoot "tools\\jdk-17\\jdk-17.0.18+8"
     if (Test-Path -LiteralPath $bundledJdk) {
@@ -120,6 +148,7 @@ $gradleArgs = @(
     "-Pexport_version_code=$VersionCode",
     "-Pexport_version_name=$VersionName",
     "-Pexport_enabled_abis=$($EnabledAbis -join ',')",
+    "-Paddons_directory=$((Join-Path $ProjectRoot 'addons'))",
     "-Pperform_signing=true",
     "-Pperform_zipalign=true",
     "-Prelease_keystore_file=$KeystoreFile",
@@ -136,6 +165,7 @@ $aabLatest = Join-Path $distRoot "cell-defense-core-immunity-release.aab"
 
 Push-Location $gradleRoot
 try {
+    Sync-PlayGamesConfig
     Sync-RuntimeAssets -ToBaseAssets $true -ToAssetPack $false
     & .\gradlew.bat clean @gradleArgs
     if ($LASTEXITCODE -ne 0) {

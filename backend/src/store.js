@@ -20,7 +20,8 @@ const STORE_TARGET_DATABASE = parsedDatabaseUrl?.pathname?.replace(/^\//, "") ||
 const DEFAULT_STORE = {
   backdoorRequests: {},
   userProfiles: {},
-  googleDeviceSessions: {}
+  googleDeviceSessions: {},
+  playGamesProfiles: {}
 };
 
 let pool = null;
@@ -201,6 +202,17 @@ export async function initStore() {
         created_at TIMESTAMPTZ NOT NULL,
         expires_at TIMESTAMPTZ NOT NULL,
         profile_json JSONB
+      );
+    `);
+    await activePool.query(`
+      CREATE TABLE IF NOT EXISTS play_games_profiles (
+        play_games_player_id TEXT PRIMARY KEY,
+        player_id TEXT NOT NULL,
+        display_name TEXT NOT NULL,
+        title TEXT,
+        icon_image_uri TEXT,
+        registered_at TIMESTAMPTZ,
+        authenticated_at TIMESTAMPTZ NOT NULL
       );
     `);
     await activePool.query("CREATE INDEX IF NOT EXISTS idx_backdoor_requests_expires_at ON backdoor_requests (expires_at);");
@@ -501,4 +513,92 @@ export async function updateGoogleDeviceSession(deviceCode, patch) {
   store.googleDeviceSessions[deviceCode] = next;
   writeLocalStore(store);
   return next;
+}
+
+function mapPlayGamesProfile(row) {
+  if (!row) {
+    return null;
+  }
+  return {
+    playerId: row.player_id,
+    provider: "play_games",
+    displayName: row.display_name,
+    email: "",
+    location: "",
+    registeredAt: toIsoString(row.registered_at),
+    authenticatedAt: toIsoString(row.authenticated_at),
+    playGamesPlayerId: row.play_games_player_id,
+    playGamesTitle: row.title || "",
+    playGamesIconImageUri: row.icon_image_uri || ""
+  };
+}
+
+export async function getPlayGamesProfile(playGamesPlayerId) {
+  await initStore();
+  if (STORE_MODE === "postgres") {
+    const result = await getPool().query(`
+      SELECT
+        play_games_player_id,
+        player_id,
+        display_name,
+        title,
+        icon_image_uri,
+        registered_at,
+        authenticated_at
+      FROM play_games_profiles
+      WHERE play_games_player_id = $1
+      LIMIT 1;
+    `, [playGamesPlayerId]);
+    return result.rowCount > 0 ? mapPlayGamesProfile(result.rows[0]) : null;
+  }
+
+  const store = readLocalStore();
+  return store.playGamesProfiles[playGamesPlayerId] || null;
+}
+
+export async function upsertPlayGamesProfile(profile) {
+  await initStore();
+  const existing = await getPlayGamesProfile(profile.playGamesPlayerId);
+  const nextProfile = {
+    ...existing,
+    ...profile,
+    provider: "play_games",
+    playerId: String(existing?.playerId || profile.playerId || ""),
+    registeredAt: existing?.registeredAt || profile.registeredAt || profile.authenticatedAt
+  };
+
+  if (STORE_MODE === "postgres") {
+    await getPool().query(`
+      INSERT INTO play_games_profiles (
+        play_games_player_id,
+        player_id,
+        display_name,
+        title,
+        icon_image_uri,
+        registered_at,
+        authenticated_at
+      ) VALUES ($1, $2, $3, $4, $5, $6::timestamptz, $7::timestamptz)
+      ON CONFLICT (play_games_player_id) DO UPDATE SET
+        player_id = EXCLUDED.player_id,
+        display_name = EXCLUDED.display_name,
+        title = EXCLUDED.title,
+        icon_image_uri = EXCLUDED.icon_image_uri,
+        registered_at = EXCLUDED.registered_at,
+        authenticated_at = EXCLUDED.authenticated_at;
+    `, [
+      nextProfile.playGamesPlayerId,
+      nextProfile.playerId,
+      nextProfile.displayName,
+      nextProfile.playGamesTitle || null,
+      nextProfile.playGamesIconImageUri || null,
+      nextProfile.registeredAt || nextProfile.authenticatedAt,
+      nextProfile.authenticatedAt
+    ]);
+    return nextProfile;
+  }
+
+  const store = readLocalStore();
+  store.playGamesProfiles[nextProfile.playGamesPlayerId] = nextProfile;
+  writeLocalStore(store);
+  return nextProfile;
 }

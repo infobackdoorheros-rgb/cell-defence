@@ -13,12 +13,14 @@ import {
   getBackdoorRequest,
   getGoogleDeviceSession,
   getGoogleDeviceSessionByUserCode,
+  getPlayGamesProfile,
   getStoreDiagnostics,
   getStoreMode,
   incrementBackdoorVerifyAttempts,
   initStore,
   probeStoreConnectivity,
   updateGoogleDeviceSession,
+  upsertPlayGamesProfile,
   upsertBackdoorRequest,
   upsertUserProfile
 } from "./store.js";
@@ -41,6 +43,9 @@ const backdoorMinRequestIntervalMs = Number(process.env.BACKDOOR_MIN_REQUEST_INT
 const trustProxy = String(process.env.TRUST_PROXY || (process.env.RENDER ? "true" : "false")) === "true";
 const googleCallbackUrl = process.env.GOOGLE_CALLBACK_URL || `${publicBaseUrl}/auth/google/web/callback`;
 const storeInitRetryMs = Number(process.env.STORE_INIT_RETRY_MS || 15000);
+const playGamesServerClientId = String(process.env.PLAY_GAMES_SERVER_CLIENT_ID || "").trim();
+const playGamesServerClientSecret = String(process.env.PLAY_GAMES_SERVER_CLIENT_SECRET || "").trim();
+const playGamesConfigured = Boolean(playGamesServerClientId && playGamesServerClientSecret);
 
 const emailProvider = createEmailProvider({ supportEmail });
 const storeState = {
@@ -160,10 +165,58 @@ function generateUserCode() {
   return value;
 }
 
+async function readJsonSafe(response) {
+  try {
+    return await response.json();
+  } catch {
+    return {};
+  }
+}
+
+async function exchangePlayGamesServerAuthCode(serverAuthCode) {
+  const params = new URLSearchParams();
+  params.set("client_id", playGamesServerClientId);
+  params.set("client_secret", playGamesServerClientSecret);
+  params.set("code", serverAuthCode);
+  params.set("grant_type", "authorization_code");
+  params.set("redirect_uri", "");
+
+  const response = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    body: params
+  });
+  const payload = await readJsonSafe(response);
+  const accessToken = String(payload.access_token || "").trim();
+  if (!response.ok || !accessToken) {
+    throw new Error(`play_games_token_exchange_failed:${response.status}:${JSON.stringify(payload)}`);
+  }
+  return accessToken;
+}
+
+async function fetchPlayGamesCurrentPlayer(accessToken) {
+  const response = await fetch("https://games.googleapis.com/games/v1/players/me", {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      Accept: "application/json"
+    }
+  });
+  const payload = await readJsonSafe(response);
+  if (!response.ok) {
+    throw new Error(`play_games_player_fetch_failed:${response.status}:${JSON.stringify(payload)}`);
+  }
+  return payload;
+}
+
 app.get("/api/health", (_req, res) => {
+  const mode = googleConfigured && playGamesConfigured
+    ? "google+playgames+email"
+    : (playGamesConfigured ? "playgames+email" : (googleConfigured ? "google+email" : "email-only"));
   res.json({
     ok: true,
-    mode: googleConfigured ? "google+email" : "email-only",
+    mode,
     publicBaseUrl,
     storageMode: getStoreMode(),
     emailMode: emailProvider.getMode(),
@@ -172,9 +225,64 @@ app.get("/api/health", (_req, res) => {
     storeError: storeState.lastError,
     storeLastCheckedAt: storeState.lastCheckedAt,
     storeDiagnostics: storeState.diagnostics,
-    storeProbe: storeState.probe
+    storeProbe: storeState.probe,
+    playGamesConfigured
   });
 });
+
+app.post("/api/auth/playgames/android", handleAsync(async (req, res) => {
+  if (!playGamesConfigured) {
+    return jsonError(res, 503, "account.play_games_backend_unavailable");
+  }
+
+  const serverAuthCode = String(req.body?.serverAuthCode || "").trim();
+  const clientPlayerId = String(req.body?.playGamesPlayerId || "").trim();
+  const clientDisplayName = String(req.body?.displayName || "").trim();
+  const clientTitle = String(req.body?.title || "").trim();
+  const clientIconImageUri = String(req.body?.iconImageUri || "").trim();
+
+  if (!serverAuthCode) {
+    return jsonError(res, 400, "account.play_games_missing_server_code");
+  }
+
+  let accessToken = "";
+  let verifiedPlayer = {};
+  try {
+    accessToken = await exchangePlayGamesServerAuthCode(serverAuthCode);
+    verifiedPlayer = await fetchPlayGamesCurrentPlayer(accessToken);
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    return jsonError(res, 401, "account.play_games_invalid_server_code", { detail });
+  }
+
+  const verifiedPlayerId = String(verifiedPlayer.playerId || verifiedPlayer.gamePlayerId || "").trim();
+  if (!verifiedPlayerId) {
+    return jsonError(res, 401, "account.play_games_invalid_server_code");
+  }
+  if (clientPlayerId && clientPlayerId != verifiedPlayerId) {
+    return jsonError(res, 401, "account.play_games_identity_mismatch", {
+      detail: `client=${clientPlayerId} verified=${verifiedPlayerId}`
+    });
+  }
+
+  const existingProfile = await getPlayGamesProfile(verifiedPlayerId);
+  const authenticatedAt = new Date().toISOString();
+  const storedProfile = await upsertPlayGamesProfile({
+    playerId: existingProfile?.playerId || crypto.randomUUID(),
+    displayName: String(verifiedPlayer.displayName || clientDisplayName || "Play Games Pilot"),
+    authenticatedAt,
+    registeredAt: existingProfile?.registeredAt || authenticatedAt,
+    playGamesPlayerId: verifiedPlayerId,
+    playGamesTitle: String(verifiedPlayer.title || clientTitle || ""),
+    playGamesIconImageUri: String(verifiedPlayer.avatarImageUrl || clientIconImageUri || "")
+  });
+
+  return res.json({
+    ok: true,
+    messageKey: "account.play_games_verified",
+    profile: storedProfile
+  });
+}));
 
 app.post("/api/auth/backdoor/register", handleAsync(async (req, res) => {
   const displayName = String(req.body?.displayName || "").trim();
@@ -471,6 +579,7 @@ async function warmStore() {
 app.listen(port, "0.0.0.0", () => {
   console.log(`Cell Defense auth backend listening on ${publicBaseUrl}`);
   console.log(`Google configured: ${googleConfigured}`);
+  console.log(`Play Games configured: ${playGamesConfigured}`);
   console.log(`Email provider mode: ${emailProvider.getMode()}`);
   console.log(`Storage mode: ${getStoreMode()}`);
   warmStore();
