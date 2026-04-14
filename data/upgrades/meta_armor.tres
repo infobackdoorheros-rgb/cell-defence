@@ -6,7 +6,7 @@
 script = ExtResource("1_gjf8f")
 upgrade_id = "meta_armor"
 display_name = "Membrana Corazzata"
-description = "Aumenta l'armatura iniziale di ogni run."
+description = "Aumenta l'armatura iniziale di ogni partita."
 layer = "meta"
 category = "defense"
 stat_key = "armor"

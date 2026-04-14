@@ -124,6 +124,62 @@ export function createEmailProvider({ supportEmail }) {
         subject: "BackDoor Heroes verification code",
         text: playerMessage
       });
+    },
+    async sendDeletionEmails({ displayName, email, provider, code, requestedAt }) {
+      if (!this.isConfigured()) {
+        throw new Error("EMAIL_PROVIDER_NOT_CONFIGURED");
+      }
+
+      const supportMessage = [
+        "Cell Defense account deletion request",
+        "",
+        `Display name: ${displayName}`,
+        `Player email: ${email}`,
+        `Provider: ${provider}`,
+        `Deletion code: ${code}`,
+        `Requested at: ${requestedAt}`
+      ].join("\n");
+
+      const playerMessage = [
+        `Hi ${displayName},`,
+        "",
+        "Use the following code inside Cell Defense: Core Immunity to confirm account deletion:",
+        "",
+        code,
+        "",
+        "This code expires in 15 minutes.",
+        "If you did not request account deletion, ignore this email."
+      ].join("\n");
+
+      if (useResend) {
+        await sendViaResend({
+          from: defaultFrom,
+          to: supportEmail,
+          subject: "Cell Defense account deletion request",
+          text: supportMessage
+        });
+        await sendViaResend({
+          from: defaultFrom,
+          to: email,
+          subject: "Cell Defense account deletion code",
+          text: playerMessage
+        });
+        return;
+      }
+
+      await smtpTransporter.sendMail({
+        from: defaultFrom,
+        to: supportEmail,
+        subject: "Cell Defense account deletion request",
+        text: supportMessage
+      });
+
+      await smtpTransporter.sendMail({
+        from: defaultFrom,
+        to: email,
+        subject: "Cell Defense account deletion code",
+        text: playerMessage
+      });
     }
   };
 }

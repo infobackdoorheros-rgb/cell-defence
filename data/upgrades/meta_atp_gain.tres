@@ -6,7 +6,7 @@
 script = ExtResource("1_t62te")
 upgrade_id = "meta_atp_gain"
 display_name = "Efficienza ATP"
-description = "Aumenta l'ATP ottenuto all'inizio di ogni run."
+description = "Aumenta l'ATP ottenuto all'inizio di ogni partita."
 layer = "meta"
 category = "utility"
 stat_key = "atp_gain_multiplier"

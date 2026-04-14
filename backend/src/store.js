@@ -19,6 +19,7 @@ const STORE_TARGET_DATABASE = parsedDatabaseUrl?.pathname?.replace(/^\//, "") ||
 
 const DEFAULT_STORE = {
   backdoorRequests: {},
+  accountDeletionRequests: {},
   userProfiles: {},
   googleDeviceSessions: {},
   playGamesProfiles: {}
@@ -195,6 +196,17 @@ export async function initStore() {
       );
     `);
     await activePool.query(`
+      CREATE TABLE IF NOT EXISTS account_deletion_requests (
+        email TEXT PRIMARY KEY,
+        display_name TEXT NOT NULL,
+        provider TEXT NOT NULL,
+        code TEXT NOT NULL,
+        requested_at TIMESTAMPTZ NOT NULL,
+        expires_at TIMESTAMPTZ NOT NULL,
+        verify_attempts INTEGER NOT NULL DEFAULT 0
+      );
+    `);
+    await activePool.query(`
       CREATE TABLE IF NOT EXISTS google_device_sessions (
         device_code TEXT PRIMARY KEY,
         user_code TEXT UNIQUE NOT NULL,
@@ -216,6 +228,7 @@ export async function initStore() {
       );
     `);
     await activePool.query("CREATE INDEX IF NOT EXISTS idx_backdoor_requests_expires_at ON backdoor_requests (expires_at);");
+    await activePool.query("CREATE INDEX IF NOT EXISTS idx_account_deletion_requests_expires_at ON account_deletion_requests (expires_at);");
     await activePool.query("CREATE INDEX IF NOT EXISTS idx_google_device_sessions_expires_at ON google_device_sessions (expires_at);");
   } else {
     ensureLocalStore();
@@ -229,6 +242,7 @@ export async function cleanupExpiredEntries() {
   if (STORE_MODE === "postgres") {
     const activePool = getPool();
     await activePool.query("DELETE FROM backdoor_requests WHERE expires_at < NOW();");
+    await activePool.query("DELETE FROM account_deletion_requests WHERE expires_at < NOW();");
     await activePool.query("DELETE FROM google_device_sessions WHERE expires_at < NOW();");
     return;
   }
@@ -238,6 +252,11 @@ export async function cleanupExpiredEntries() {
   for (const [email, request] of Object.entries(store.backdoorRequests)) {
     if (Number(request.expiresAt || 0) < now) {
       delete store.backdoorRequests[email];
+    }
+  }
+  for (const [email, request] of Object.entries(store.accountDeletionRequests)) {
+    if (Number(request.expiresAt || 0) < now) {
+      delete store.accountDeletionRequests[email];
     }
   }
   for (const [deviceCode, entry] of Object.entries(store.googleDeviceSessions)) {
@@ -353,6 +372,111 @@ export async function deleteBackdoorRequest(email) {
   writeLocalStore(store);
 }
 
+export async function getAccountDeletionRequest(email) {
+  await initStore();
+  if (STORE_MODE === "postgres") {
+    const result = await getPool().query(`
+      SELECT
+        email,
+        display_name,
+        provider,
+        code,
+        requested_at,
+        expires_at,
+        verify_attempts
+      FROM account_deletion_requests
+      WHERE email = $1
+      LIMIT 1;
+    `, [email]);
+    if (result.rowCount === 0) {
+      return null;
+    }
+    const row = result.rows[0];
+    return {
+      displayName: row.display_name,
+      email: row.email,
+      provider: row.provider,
+      code: row.code,
+      requestedAt: toIsoString(row.requested_at),
+      expiresAt: new Date(row.expires_at).getTime(),
+      verifyAttempts: Number(row.verify_attempts || 0)
+    };
+  }
+
+  const store = readLocalStore();
+  return store.accountDeletionRequests[email] || null;
+}
+
+export async function upsertAccountDeletionRequest(request) {
+  await initStore();
+  if (STORE_MODE === "postgres") {
+    await getPool().query(`
+      INSERT INTO account_deletion_requests (
+        email,
+        display_name,
+        provider,
+        code,
+        requested_at,
+        expires_at,
+        verify_attempts
+      ) VALUES ($1, $2, $3, $4, $5::timestamptz, $6::timestamptz, $7)
+      ON CONFLICT (email) DO UPDATE SET
+        display_name = EXCLUDED.display_name,
+        provider = EXCLUDED.provider,
+        code = EXCLUDED.code,
+        requested_at = EXCLUDED.requested_at,
+        expires_at = EXCLUDED.expires_at,
+        verify_attempts = EXCLUDED.verify_attempts;
+    `, [
+      request.email,
+      request.displayName,
+      request.provider,
+      request.code,
+      request.requestedAt,
+      new Date(Number(request.expiresAt || 0)).toISOString(),
+      Number(request.verifyAttempts || 0)
+    ]);
+    return;
+  }
+
+  const store = readLocalStore();
+  store.accountDeletionRequests[request.email] = request;
+  writeLocalStore(store);
+}
+
+export async function incrementAccountDeletionVerifyAttempts(email) {
+  await initStore();
+  if (STORE_MODE === "postgres") {
+    const result = await getPool().query(`
+      UPDATE account_deletion_requests
+      SET verify_attempts = verify_attempts + 1
+      WHERE email = $1
+      RETURNING verify_attempts;
+    `, [email]);
+    return result.rowCount > 0 ? Number(result.rows[0].verify_attempts || 0) : 0;
+  }
+
+  const store = readLocalStore();
+  if (!store.accountDeletionRequests[email]) {
+    return 0;
+  }
+  store.accountDeletionRequests[email].verifyAttempts = Number(store.accountDeletionRequests[email].verifyAttempts || 0) + 1;
+  writeLocalStore(store);
+  return Number(store.accountDeletionRequests[email].verifyAttempts || 0);
+}
+
+export async function deleteAccountDeletionRequest(email) {
+  await initStore();
+  if (STORE_MODE === "postgres") {
+    await getPool().query("DELETE FROM account_deletion_requests WHERE email = $1;", [email]);
+    return;
+  }
+
+  const store = readLocalStore();
+  delete store.accountDeletionRequests[email];
+  writeLocalStore(store);
+}
+
 export async function upsertUserProfile(profile) {
   await initStore();
   if (STORE_MODE === "postgres") {
@@ -390,6 +514,18 @@ export async function upsertUserProfile(profile) {
 
   const store = readLocalStore();
   store.userProfiles[profile.email] = profile;
+  writeLocalStore(store);
+}
+
+export async function deleteUserProfileByEmail(email) {
+  await initStore();
+  if (STORE_MODE === "postgres") {
+    await getPool().query("DELETE FROM user_profiles WHERE email = $1;", [email]);
+    return;
+  }
+
+  const store = readLocalStore();
+  delete store.userProfiles[email];
   writeLocalStore(store);
 }
 
@@ -601,4 +737,16 @@ export async function upsertPlayGamesProfile(profile) {
   store.playGamesProfiles[nextProfile.playGamesPlayerId] = nextProfile;
   writeLocalStore(store);
   return nextProfile;
+}
+
+export async function deletePlayGamesProfile(playGamesPlayerId) {
+  await initStore();
+  if (STORE_MODE === "postgres") {
+    await getPool().query("DELETE FROM play_games_profiles WHERE play_games_player_id = $1;", [playGamesPlayerId]);
+    return;
+  }
+
+  const store = readLocalStore();
+  delete store.playGamesProfiles[playGamesPlayerId];
+  writeLocalStore(store);
 }

@@ -46,6 +46,10 @@ func get_default_save() -> Dictionary:
 			"pending_location": "",
 			"pending_code": "",
 			"pending_requested_at": "",
+			"deletion_pending_email": "",
+			"deletion_pending_provider": "",
+			"deletion_pending_code": "",
+			"deletion_requested_at": "",
 			"google_device_code": "",
 			"google_user_code": "",
 			"google_verification_url": "",
@@ -156,6 +160,12 @@ func reset_game_progress() -> void:
 	_cached_save = get_default_save()
 	_cached_save["social_connections"] = preserved_social
 	_cached_save["account_auth"] = preserved_account
+	_cached_save["settings"] = preserved_settings
+	write_save(_prepare_save_state(_cached_save))
+
+func reset_for_account_deletion() -> void:
+	var preserved_settings: Dictionary = (_cached_save.get("settings", {}) as Dictionary).duplicate(true)
+	_cached_save = get_default_save()
 	_cached_save["settings"] = preserved_settings
 	write_save(_prepare_save_state(_cached_save))
 

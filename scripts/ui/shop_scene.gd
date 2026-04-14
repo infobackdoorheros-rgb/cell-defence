@@ -182,11 +182,15 @@ func _refresh_ui(_unused = null) -> void:
 	_title_label.text = SettingsManager.t("shop.title")
 	_subtitle_label.text = SettingsManager.t("shop.subtitle")
 	var summary := ShopManager.get_shop_summary()
-	_status_label.text = SettingsManager.t("shop.status") % [
-		MetaProgression.dna,
-		int(summary.get("free_dna_remaining", 0)),
-		int(summary.get("offers_available", 0))
-	]
+	var monetization_enabled := ShopManager.is_rewarded_enabled() or ShopManager.are_purchases_enabled() or ShopManager.are_offer_claims_enabled()
+	if monetization_enabled:
+		_status_label.text = SettingsManager.t("shop.status") % [
+			MetaProgression.dna,
+			int(summary.get("free_dna_remaining", 0)),
+			int(summary.get("offers_available", 0))
+		]
+	else:
+		_status_label.text = SettingsManager.t("shop.beta_locked") % [MetaProgression.dna]
 	_back_button.text = SettingsManager.t("common.main_menu")
 	_refresh_rewarded()
 	_refresh_packs()
@@ -194,6 +198,11 @@ func _refresh_ui(_unused = null) -> void:
 
 func _refresh_rewarded() -> void:
 	var overview := ShopManager.get_rewarded_video_overview()
+	if not bool(overview.get("enabled", false)):
+		_rewarded_summary_label.text = SettingsManager.t("shop.rewarded_locked")
+		_rewarded_button.text = SettingsManager.t("common.coming_soon")
+		_rewarded_button.disabled = true
+		return
 	_rewarded_summary_label.text = SettingsManager.t("shop.rewarded_status") % [
 		int(overview.get("reward_amount", 0)),
 		int(overview.get("remaining", 0)),
@@ -208,6 +217,7 @@ func _refresh_packs() -> void:
 	for child in _packs_flow.get_children():
 		child.queue_free()
 
+	var purchases_enabled := ShopManager.are_purchases_enabled()
 	for pack in ShopManager.get_dna_packs():
 		var card := PanelContainer.new()
 		card.custom_minimum_size = Vector2(212.0, 208.0)
@@ -237,21 +247,27 @@ func _refresh_packs() -> void:
 
 		var claims := int(pack.get("claim_count", 0))
 		var meta := Label.new()
-		meta.text = "%s\n%s %d" % [String(pack.get("price_label", "")), SettingsManager.t("shop.purchase_count"), claims]
+		if purchases_enabled:
+			meta.text = "%s\n%s %d" % [String(pack.get("price_label", "")), SettingsManager.t("shop.purchase_count"), claims]
+		else:
+			meta.text = "%s\n%s" % [String(pack.get("price_label", "")), SettingsManager.t("shop.packs_locked")]
 		meta.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		BioUI.style_subtitle(meta, 14)
 		box.add_child(meta)
 
 		var button := Button.new()
 		BioUI.style_button(button, Color(1.0, 0.74, 0.38, 1.0), 56.0)
-		button.text = SettingsManager.t("shop.buy_pack")
-		button.pressed.connect(_on_pack_pressed.bind(StringName(pack_id)))
+		button.text = SettingsManager.t("shop.buy_pack") if purchases_enabled else SettingsManager.t("common.coming_soon")
+		button.disabled = not purchases_enabled
+		if purchases_enabled:
+			button.pressed.connect(_on_pack_pressed.bind(StringName(pack_id)))
 		box.add_child(button)
 
 func _refresh_offers() -> void:
 	for child in _offers_flow.get_children():
 		child.queue_free()
 
+	var offers_enabled := ShopManager.are_offer_claims_enabled()
 	for offer in ShopManager.get_flash_offers():
 		var card := PanelContainer.new()
 		card.custom_minimum_size = Vector2(224.0, 188.0)
@@ -270,6 +286,8 @@ func _refresh_offers() -> void:
 
 		var body := Label.new()
 		body.text = "%s\n+%d" % [String(offer.get("description", "")), int(offer.get("reward_amount", 0))]
+		if not offers_enabled:
+			body.text += "\n%s" % SettingsManager.t("shop.offers_locked")
 		body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		BioUI.style_body(body, BioUI.COLOR_TEXT, 15)
 		box.add_child(body)
@@ -277,11 +295,11 @@ func _refresh_offers() -> void:
 		var button := Button.new()
 		BioUI.style_button(button, Color(0.82, 0.62, 1.0, 1.0), 54.0)
 		var offer_id := StringName(offer.get("id", ""))
-		if bool(offer.get("available", false)):
+		if offers_enabled and bool(offer.get("available", false)):
 			button.text = SettingsManager.t("shop.flash_claim")
 			button.pressed.connect(_on_offer_pressed.bind(offer_id))
 		else:
-			button.text = SettingsManager.t("common.claimed")
+			button.text = SettingsManager.t("common.coming_soon") if not offers_enabled else SettingsManager.t("common.claimed")
 			button.disabled = true
 		box.add_child(button)
 

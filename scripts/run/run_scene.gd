@@ -48,6 +48,20 @@ var _game_over_summary: Dictionary = {}
 var _game_over_reward_multiplier: float = 1.0
 var _run_music_player: AudioStreamPlayer
 
+func _notification(what: int) -> void:
+	if not is_node_ready():
+		return
+	match what:
+		NOTIFICATION_APPLICATION_PAUSED, NOTIFICATION_APPLICATION_FOCUS_OUT, NOTIFICATION_WM_CLOSE_REQUEST:
+			_save_for_lifecycle()
+		NOTIFICATION_WM_GO_BACK_REQUEST:
+			if run_finished:
+				return
+			_save_for_lifecycle()
+			if not pause_menu_panel.visible and not mutation_panel.visible and not ftue_overlay.visible:
+				gameplay_paused = true
+				pause_menu_panel.show_panel()
+
 func _ready() -> void:
 	_rng.randomize()
 	get_viewport().size_changed.connect(_update_arena_layout)
@@ -506,7 +520,12 @@ func _finalize_run_rewards() -> void:
 	AnalyticsManager.complete_run(_game_over_summary)
 	_committed_rewards = true
 
-func _save_current_run_snapshot() -> void:
+func _save_for_lifecycle() -> void:
+	if run_finished or not is_inside_tree():
+		return
+	_save_current_run_snapshot(false)
+
+func _save_current_run_snapshot(show_feedback: bool = true) -> void:
 	var snapshot := {
 		"selected_core_archetype": String(RunConfigManager.selected_core_archetype),
 		"selected_chapter": String(RunConfigManager.selected_chapter),
@@ -520,7 +539,8 @@ func _save_current_run_snapshot() -> void:
 		"reward_flow": RewardFlowManager.get_snapshot_state()
 	}
 	SaveManager.save_run_snapshot(snapshot)
-	hud.show_runtime_event(SettingsManager.t("pause.save_done"))
+	if show_feedback:
+		hud.show_runtime_event(SettingsManager.t("pause.save_done"))
 
 func _try_resume_saved_run() -> bool:
 	var snapshot := SaveManager.get_run_snapshot()

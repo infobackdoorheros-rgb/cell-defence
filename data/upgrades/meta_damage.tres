@@ -6,7 +6,7 @@
 script = ExtResource("1_9a0ds")
 upgrade_id = "meta_damage"
 display_name = "Danno Basale"
-description = "Aumenta il danno iniziale di ogni run."
+description = "Aumenta il danno iniziale di ogni partita."
 layer = "meta"
 category = "attack"
 stat_key = "damage"

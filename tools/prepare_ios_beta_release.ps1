@@ -1,7 +1,7 @@
 param(
     [string]$ProjectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path,
-    [string]$VersionName = "0.3.2",
-    [string]$BuildNumber = "14",
+    [string]$VersionName = "0.3.3",
+    [string]$BuildNumber = "15",
     [string]$BundleIdentifier = "com.backdoorheroes.celldefensecoreimmunity",
     [string]$AuthBackendUrl = "https://cell-defense-auth-backend.onrender.com"
 )

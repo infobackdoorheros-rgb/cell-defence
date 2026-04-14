@@ -9,17 +9,23 @@ import { createEmailProvider } from "./email_provider.js";
 import {
   cleanupExpiredEntries,
   createGoogleDeviceSession,
+  deleteAccountDeletionRequest,
   deleteBackdoorRequest,
+  deletePlayGamesProfile,
+  deleteUserProfileByEmail,
+  getAccountDeletionRequest,
   getBackdoorRequest,
   getGoogleDeviceSession,
   getGoogleDeviceSessionByUserCode,
   getPlayGamesProfile,
   getStoreDiagnostics,
   getStoreMode,
+  incrementAccountDeletionVerifyAttempts,
   incrementBackdoorVerifyAttempts,
   initStore,
   probeStoreConnectivity,
   updateGoogleDeviceSession,
+  upsertAccountDeletionRequest,
   upsertPlayGamesProfile,
   upsertBackdoorRequest,
   upsertUserProfile
@@ -281,6 +287,131 @@ app.post("/api/auth/playgames/android", handleAsync(async (req, res) => {
     ok: true,
     messageKey: "account.play_games_verified",
     profile: storedProfile
+  });
+}));
+
+app.post("/api/account/delete/playgames", handleAsync(async (req, res) => {
+  if (!playGamesConfigured) {
+    return jsonError(res, 503, "account.play_games_backend_unavailable");
+  }
+
+  const serverAuthCode = String(req.body?.serverAuthCode || "").trim();
+  const clientPlayerId = String(req.body?.playGamesPlayerId || "").trim();
+  if (!serverAuthCode) {
+    return jsonError(res, 400, "account.play_games_missing_server_code");
+  }
+
+  let verifiedPlayer = {};
+  try {
+    const accessToken = await exchangePlayGamesServerAuthCode(serverAuthCode);
+    verifiedPlayer = await fetchPlayGamesCurrentPlayer(accessToken);
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    return jsonError(res, 401, "account.play_games_invalid_server_code", { detail });
+  }
+
+  const verifiedPlayerId = String(verifiedPlayer.playerId || verifiedPlayer.gamePlayerId || "").trim();
+  if (!verifiedPlayerId) {
+    return jsonError(res, 401, "account.play_games_invalid_server_code");
+  }
+  if (clientPlayerId && clientPlayerId !== verifiedPlayerId) {
+    return jsonError(res, 401, "account.play_games_identity_mismatch", {
+      detail: `client=${clientPlayerId} verified=${verifiedPlayerId}`
+    });
+  }
+
+  await deletePlayGamesProfile(verifiedPlayerId);
+  return res.json({
+    ok: true,
+    messageKey: "account.deletion_completed"
+  });
+}));
+
+app.post("/api/account/delete/email/request", handleAsync(async (req, res) => {
+  const displayName = String(req.body?.displayName || "Immune Pilot").trim().slice(0, 64) || "Immune Pilot";
+  const email = String(req.body?.email || "").trim().toLowerCase();
+  const provider = String(req.body?.provider || "backdoor").trim().toLowerCase() || "backdoor";
+
+  if (!email.includes("@") || !email.includes(".")) {
+    return jsonError(res, 400, "account.error_invalid_email");
+  }
+
+  await cleanupExpiredEntries();
+  const existingRequest = await getAccountDeletionRequest(email);
+  if (existingRequest && (Date.now() - Date.parse(existingRequest.requestedAt || 0)) < backdoorMinRequestIntervalMs) {
+    return jsonError(res, 429, "account.error_request_throttled");
+  }
+
+  const code = generateSixDigitCode();
+  const requestedAt = new Date().toISOString();
+  const expiresAt = Date.now() + backdoorCodeTtlMs;
+
+  await upsertAccountDeletionRequest({
+    displayName,
+    email,
+    provider,
+    code,
+    requestedAt,
+    expiresAt,
+    verifyAttempts: 0
+  });
+
+  try {
+    await emailProvider.sendDeletionEmails({
+      displayName,
+      email,
+      provider,
+      code,
+      requestedAt
+    });
+  } catch (error) {
+    const detail = String(error.message || error);
+    if (!devExposeCodes) {
+      const messageKey = detail.includes("ENOTFOUND") || detail.includes("EAUTH")
+        ? "account.error_email_delivery_unavailable"
+        : "account.error_backend_unreachable";
+      return jsonError(res, 500, messageKey, {
+        detail
+      });
+    }
+  }
+
+  return res.json({
+    ok: true,
+    messageKey: "account.deletion_request_sent",
+    requestedAt,
+    devCode: devExposeCodes ? code : undefined
+  });
+}));
+
+app.post("/api/account/delete/email/confirm", handleAsync(async (req, res) => {
+  const email = String(req.body?.email || "").trim().toLowerCase();
+  const code = String(req.body?.code || "").trim();
+  if (!code) {
+    return jsonError(res, 400, "account.error_code_required");
+  }
+
+  await cleanupExpiredEntries();
+  const pending = await getAccountDeletionRequest(email);
+  if (!pending) {
+    return jsonError(res, 404, "account.deletion_invalid_code");
+  }
+  if (Number(pending.verifyAttempts || 0) >= backdoorMaxVerifyAttempts) {
+    await deleteAccountDeletionRequest(email);
+    return jsonError(res, 429, "account.error_too_many_attempts");
+  }
+  if (pending.code !== code) {
+    await incrementAccountDeletionVerifyAttempts(email);
+    return jsonError(res, 400, "account.deletion_invalid_code");
+  }
+
+  await deleteUserProfileByEmail(email);
+  await deleteBackdoorRequest(email);
+  await deleteAccountDeletionRequest(email);
+
+  return res.json({
+    ok: true,
+    messageKey: "account.deletion_completed"
   });
 }));
 

@@ -32,8 +32,8 @@ Genera il pacchetto con:
 
 Output previsto:
 
-- `dist/ios/cell-defense-core-immunity-ios-beta-0.3.2-source`
-- `dist/ios/cell-defense-core-immunity-ios-beta-0.3.2-source.zip`
+- `dist/ios/cell-defense-core-immunity-ios-beta-0.3.3-source`
+- `dist/ios/cell-defense-core-immunity-ios-beta-0.3.3-source.zip`
 
 ## Procedura su Mac
 
@@ -53,8 +53,8 @@ Output previsto:
 ## Valori iOS gia impostati
 
 - Bundle identifier: `com.backdoorheroes.celldefensecoreimmunity`
-- Short version: `0.3.2`
-- Build version: `14`
+- Short version: `0.3.3`
+- Build version: `15`
 - Minimum iOS version: `12.0`
 - Export mode: `project only`
 - Architecture: `arm64`

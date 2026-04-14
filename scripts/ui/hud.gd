@@ -44,6 +44,9 @@ var _category_buttons: Dictionary = {}
 var _category_sections: Dictionary = {}
 var _section_grids: Dictionary = {}
 var _section_scrolls: Dictionary = {}
+var _upgrade_cards: Dictionary = {}
+var _upgrade_title_labels: Dictionary = {}
+var _upgrade_body_labels: Dictionary = {}
 var _upgrade_buttons: Dictionary = {}
 var _upgrade_data_by_id: Dictionary = {}
 var _mutation_label: Label
@@ -356,6 +359,7 @@ func _build_upgrade_section(parent: VBoxContainer, category: StringName, title: 
 	var grid := GridContainer.new()
 	grid.columns = 2
 	grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	grid.mouse_filter = Control.MOUSE_FILTER_PASS
 	grid.add_theme_constant_override("h_separation", 8)
 	grid.add_theme_constant_override("v_separation", 8)
 	scroll.add_child(grid)
@@ -363,15 +367,45 @@ func _build_upgrade_section(parent: VBoxContainer, category: StringName, title: 
 
 	for upgrade in ContentDB.get_runtime_upgrades_by_category(category):
 		_upgrade_data_by_id[String(upgrade.upgrade_id)] = upgrade
+		var upgrade_key := String(upgrade.upgrade_id)
+		var accent := BioUI.get_category_accent(category)
+
+		var card := PanelContainer.new()
+		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		card.custom_minimum_size = Vector2(0.0, 132.0)
+		card.mouse_filter = Control.MOUSE_FILTER_PASS
+		_apply_hud_panel_style(card, Color(0.08, 0.1, 0.16, 0.96), accent, 18)
+		grid.add_child(card)
+		_upgrade_cards[upgrade_key] = card
+
+		var card_box := VBoxContainer.new()
+		card_box.add_theme_constant_override("separation", 8)
+		card_box.mouse_filter = Control.MOUSE_FILTER_PASS
+		card.add_child(card_box)
+
+		var title_label := Label.new()
+		title_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		title_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		BioUI.style_heading(title_label, accent, 18)
+		card_box.add_child(title_label)
+		_upgrade_title_labels[upgrade_key] = title_label
+
+		var body_label := Label.new()
+		body_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		body_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		BioUI.style_body(body_label, BioUI.COLOR_TEXT, 14)
+		card_box.add_child(body_label)
+		_upgrade_body_labels[upgrade_key] = body_label
+
 		var button := Button.new()
-		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		button.alignment = HORIZONTAL_ALIGNMENT_CENTER
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		button.custom_minimum_size = Vector2(0.0, 102.0)
-		_apply_upgrade_button_style(button, BioUI.get_category_accent(category))
+		button.custom_minimum_size = Vector2(0.0, 48.0)
+		button.tooltip_text = upgrade.description
+		_apply_upgrade_button_style(button, accent)
 		button.pressed.connect(_on_upgrade_button_pressed.bind(upgrade.upgrade_id))
-		grid.add_child(button)
-		_upgrade_buttons[String(upgrade.upgrade_id)] = button
+		card_box.add_child(button)
+		_upgrade_buttons[upgrade_key] = button
 
 func _build_mutation_section(parent: VBoxContainer) -> void:
 	var section := VBoxContainer.new()
@@ -443,17 +477,29 @@ func refresh_shop(upgrade_manager: UpgradeManager) -> void:
 	for key in _upgrade_buttons.keys():
 		var upgrade := _upgrade_data_by_id[key] as UpgradeData
 		var button := _upgrade_buttons[key] as Button
+		var card := _upgrade_cards.get(key, null) as PanelContainer
+		var title_label := _upgrade_title_labels.get(key, null) as Label
+		var body_label := _upgrade_body_labels.get(key, null) as Label
 		var level := upgrade_manager.get_runtime_level(upgrade.upgrade_id)
 		var can_buy := upgrade_manager.can_purchase(upgrade.upgrade_id)
 		var bonus_text := _build_upgrade_bonus_text(upgrade, level)
 		var next_text := _build_upgrade_next_hint(upgrade, level)
+		if title_label != null:
+			title_label.text = upgrade.display_name
+			title_label.tooltip_text = upgrade.description
+		if card != null:
+			card.tooltip_text = upgrade.description
 		if level >= upgrade.max_level:
-			button.text = "%s\nLv.%d/%d | MAX\nAttivo: %s" % [upgrade.display_name, level, upgrade.max_level, bonus_text]
+			if body_label != null:
+				body_label.text = "Lv.%d/%d\nAttivo: %s" % [level, upgrade.max_level, bonus_text]
+			button.text = "MAX"
 			button.disabled = true
 			continue
 
 		var cost := upgrade.get_cost_for_level(level + 1)
-		button.text = "%s\nLv.%d/%d | %d ATP\nAttivo: %s\n%s" % [upgrade.display_name, level, upgrade.max_level, cost, bonus_text, next_text]
+		if body_label != null:
+			body_label.text = "Lv.%d/%d\nAttivo: %s\n%s" % [level, upgrade.max_level, bonus_text, next_text]
+		button.text = SettingsManager.t("hud.buy_upgrade") % cost
 		button.disabled = not can_buy
 
 func set_active_mutations(mutations: Array[MutationData]) -> void:
@@ -572,10 +618,15 @@ func _update_responsive_layout() -> void:
 		if category_button != null:
 			category_button.custom_minimum_size = Vector2(74.0 if _portrait_layout else (82.0 if very_compact else 92.0), 34.0 if _portrait_layout else (38.0 if very_compact else 40.0))
 
+	for card in _upgrade_cards.values():
+		var upgrade_card := card as PanelContainer
+		if upgrade_card != null:
+			upgrade_card.custom_minimum_size.y = 126.0 if _portrait_layout else (136.0 if compact else 144.0)
+
 	for button in _upgrade_buttons.values():
 		var upgrade_button := button as Button
 		if upgrade_button != null:
-			upgrade_button.custom_minimum_size.y = 82.0 if _portrait_layout else (92.0 if compact else 102.0)
+			upgrade_button.custom_minimum_size.y = 42.0 if _portrait_layout else (46.0 if compact else 48.0)
 
 	_battle_wave_label.add_theme_font_size_override("font_size", 22 if _portrait_layout else (24 if compact else 28))
 	_active_skill_button.custom_minimum_size = Vector2(104.0 if _portrait_layout else (118.0 if compact else 132.0), 60.0 if _portrait_layout else (76.0 if compact else 84.0))

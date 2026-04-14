@@ -3,6 +3,8 @@ class_name AccountSceneUI
 
 const BioUI = preload("res://scripts/ui/bio_ui.gd")
 const BioBackdrop = preload("res://scripts/ui/bio_backdrop.gd")
+const PRIVACY_POLICY_URL := "https://github.com/infobackdoorheros-rgb/cell-defence/blob/main/docs/privacy_policy.md"
+const ACCOUNT_DELETION_URL := "https://github.com/infobackdoorheros-rgb/cell-defence/blob/main/docs/account_deletion.md"
 
 var _title_label: Label
 var _subtitle_label: Label
@@ -27,6 +29,18 @@ var _send_request_button: Button
 var _code_input: LineEdit
 var _verify_button: Button
 var _helper_label: Label
+
+var _legal_title: Label
+var _legal_note: Label
+var _privacy_button: Button
+var _deletion_policy_button: Button
+
+var _deletion_title: Label
+var _deletion_note: Label
+var _delete_request_button: Button
+var _delete_code_input: LineEdit
+var _delete_confirm_button: Button
+
 var _logout_button: Button
 var _back_button: Button
 var _backend_warmup_running := false
@@ -209,6 +223,74 @@ func _build_ui() -> void:
 	BioUI.style_body(_helper_label, BioUI.COLOR_TEXT, 15)
 	backdoor_box.add_child(_helper_label)
 
+	var legal_panel := PanelContainer.new()
+	BioUI.style_panel(legal_panel, Color(0.08, 0.11, 0.16, 0.94), Color(0.92, 0.47, 1.0, 0.78), 24, 16)
+	content.add_child(legal_panel)
+
+	var legal_box := VBoxContainer.new()
+	legal_box.add_theme_constant_override("separation", 10)
+	legal_panel.add_child(legal_box)
+
+	_legal_title = Label.new()
+	BioUI.style_heading(_legal_title, Color(0.92, 0.47, 1.0, 1.0), 24)
+	legal_box.add_child(_legal_title)
+
+	_legal_note = Label.new()
+	_legal_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	BioUI.style_subtitle(_legal_note, 15)
+	legal_box.add_child(_legal_note)
+
+	var legal_button_row := HFlowContainer.new()
+	legal_button_row.add_theme_constant_override("h_separation", 10)
+	legal_button_row.add_theme_constant_override("v_separation", 10)
+	legal_box.add_child(legal_button_row)
+
+	_privacy_button = Button.new()
+	_privacy_button.custom_minimum_size = Vector2(220.0, 60.0)
+	BioUI.style_button(_privacy_button, Color(0.46, 0.82, 1.0, 1.0), 60.0)
+	_privacy_button.pressed.connect(func() -> void: OS.shell_open(PRIVACY_POLICY_URL))
+	legal_button_row.add_child(_privacy_button)
+
+	_deletion_policy_button = Button.new()
+	_deletion_policy_button.custom_minimum_size = Vector2(220.0, 60.0)
+	BioUI.style_button(_deletion_policy_button, Color(1.0, 0.77, 0.41, 1.0), 60.0)
+	_deletion_policy_button.pressed.connect(func() -> void: OS.shell_open(ACCOUNT_DELETION_URL))
+	legal_button_row.add_child(_deletion_policy_button)
+
+	var deletion_panel := PanelContainer.new()
+	BioUI.style_panel(deletion_panel, Color(0.11, 0.09, 0.14, 0.94), Color(1.0, 0.47, 0.45, 0.8), 24, 16)
+	content.add_child(deletion_panel)
+
+	var deletion_box := VBoxContainer.new()
+	deletion_box.add_theme_constant_override("separation", 10)
+	deletion_panel.add_child(deletion_box)
+
+	_deletion_title = Label.new()
+	BioUI.style_heading(_deletion_title, Color(1.0, 0.47, 0.45, 1.0), 24)
+	deletion_box.add_child(_deletion_title)
+
+	_deletion_note = Label.new()
+	_deletion_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	BioUI.style_subtitle(_deletion_note, 15)
+	deletion_box.add_child(_deletion_note)
+
+	_delete_request_button = Button.new()
+	BioUI.style_button(_delete_request_button, Color(1.0, 0.47, 0.45, 1.0), 66.0)
+	_delete_request_button.pressed.connect(_on_delete_request_pressed)
+	deletion_box.add_child(_delete_request_button)
+
+	_delete_code_input = LineEdit.new()
+	_delete_code_input.custom_minimum_size = Vector2(0.0, 56.0)
+	_delete_code_input.max_length = 6
+	_delete_code_input.virtual_keyboard_type = LineEdit.KEYBOARD_TYPE_NUMBER
+	_delete_code_input.text_changed.connect(func(_new_text: String) -> void: _refresh_ui())
+	deletion_box.add_child(_delete_code_input)
+
+	_delete_confirm_button = Button.new()
+	BioUI.style_button(_delete_confirm_button, Color(0.37, 0.94, 0.84, 1.0), 66.0)
+	_delete_confirm_button.pressed.connect(_on_delete_confirm_pressed)
+	deletion_box.add_child(_delete_confirm_button)
+
 	var footer := HBoxContainer.new()
 	footer.add_theme_constant_override("separation", 12)
 	layout.add_child(footer)
@@ -242,6 +324,14 @@ func _refresh_ui(_unused = null) -> void:
 	_code_input.placeholder_text = SettingsManager.t("account.code_placeholder")
 	_send_request_button.text = SettingsManager.t("account.send_request")
 	_verify_button.text = SettingsManager.t("account.verify_code")
+	_legal_title.text = SettingsManager.t("account.legal_title")
+	_legal_note.text = SettingsManager.t("account.legal_note")
+	_privacy_button.text = SettingsManager.t("account.privacy_button")
+	_deletion_policy_button.text = SettingsManager.t("account.deletion_policy_button")
+	_deletion_title.text = SettingsManager.t("account.deletion_title")
+	_delete_request_button.text = SettingsManager.t("account.delete_request")
+	_delete_code_input.placeholder_text = SettingsManager.t("account.delete_code_placeholder")
+	_delete_confirm_button.text = SettingsManager.t("account.delete_confirm")
 	_logout_button.text = SettingsManager.t("account.logout")
 	_back_button.text = SettingsManager.t("common.main_menu")
 
@@ -250,6 +340,9 @@ func _refresh_ui(_unused = null) -> void:
 	var display_name := String(state.get("display_name", ""))
 	var email := String(state.get("email", ""))
 	var status := AccountAuthManager.get_status()
+	var deletion_summary := AccountAuthManager.get_deletion_summary()
+	var deletion_pending_email := String(deletion_summary.get("email", ""))
+	var deletion_requested_at := String(deletion_summary.get("requested_at", ""))
 
 	match status:
 		&"pending_google":
@@ -299,6 +392,19 @@ func _refresh_ui(_unused = null) -> void:
 	_google_check_button.visible = status == &"pending_google" and AccountAuthManager.is_remote_backend_enabled()
 	_play_games_button.disabled = not AccountAuthManager.can_start_play_games_signin()
 	_google_button.disabled = AccountAuthManager.is_remote_backend_enabled() and not AccountAuthManager.is_google_available()
+	_delete_request_button.disabled = not AccountAuthManager.can_delete_account()
+	_delete_code_input.visible = AccountAuthManager.requires_deletion_confirmation_code() and not deletion_pending_email.is_empty()
+	_delete_confirm_button.visible = _delete_code_input.visible
+	_delete_confirm_button.disabled = _delete_code_input.visible and _delete_code_input.text.strip_edges().is_empty()
+
+	if status == &"guest":
+		_deletion_note.text = SettingsManager.t("account.deletion_note_guest")
+	elif provider == "play_games":
+		_deletion_note.text = SettingsManager.t("account.deletion_note_play_games")
+	else:
+		_deletion_note.text = SettingsManager.t("account.deletion_note_email")
+		if not deletion_pending_email.is_empty():
+			_deletion_note.text += "\n\n" + (SettingsManager.t("account.deletion_pending_hint") % [deletion_pending_email, deletion_requested_at])
 
 	if status == &"pending_backdoor":
 		var pending := AccountAuthManager.get_pending_summary()
@@ -385,21 +491,36 @@ func _on_google_check_pressed() -> void:
 	_google_check_button.disabled = false
 	_apply_message_result(result)
 
+func _on_delete_request_pressed() -> void:
+	_delete_request_button.disabled = true
+	var result := await AccountAuthManager.request_account_deletion()
+	_delete_request_button.disabled = not AccountAuthManager.can_delete_account()
+	_apply_message_result(result)
+
+func _on_delete_confirm_pressed() -> void:
+	_delete_confirm_button.disabled = true
+	var result := await AccountAuthManager.confirm_account_deletion(_delete_code_input.text)
+	if bool(result.get("ok", false)):
+		_delete_code_input.text = ""
+	_delete_confirm_button.disabled = false
+	_apply_message_result(result)
+
 func _on_logout_pressed() -> void:
 	AccountAuthManager.logout()
 	_name_input.text = ""
 	_email_input.text = ""
 	_location_input.text = ""
 	_code_input.text = ""
+	_delete_code_input.text = ""
 	_message_label.text = ""
 	_helper_label.text = ""
 
 func _apply_message_result(result: Dictionary) -> void:
 	var key := String(result.get("message_key", ""))
+	_refresh_ui()
 	if not key.is_empty():
 		var text := SettingsManager.t(key)
 		var detail := String(result.get("detail", "")).strip_edges()
 		if not detail.is_empty() and (OS.has_feature("editor") or OS.is_debug_build()):
 			text += "\n%s" % detail
 		_message_label.text = text
-	_refresh_ui()

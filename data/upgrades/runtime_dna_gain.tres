@@ -6,7 +6,7 @@
 script = ExtResource("1_pb7ef")
 upgrade_id = "runtime_dna_gain"
 display_name = "Sequenziamento Rapido"
-description = "Aumenta il DNA finale ottenuto durante la run."
+description = "Aumenta il DNA finale ottenuto durante la partita."
 layer = "runtime"
 category = "utility"
 stat_key = "dna_gain_multiplier"

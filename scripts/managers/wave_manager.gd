@@ -317,8 +317,8 @@ func _apply_chapter_weights(weights: Dictionary, chapter) -> Dictionary:
 			if enemy_data != null:
 				if enemy_data.family == &"virus":
 					weighted_value *= 1.0 + chapter.virus_weight_bonus
-			elif enemy_data.family == &"bacteria":
-				weighted_value *= 1.0 + chapter.bacteria_weight_bonus
+				elif enemy_data.family == &"bacteria":
+					weighted_value *= 1.0 + chapter.bacteria_weight_bonus
 		adjusted[key] = weighted_value
 	return adjusted
 

@@ -22,25 +22,31 @@ func save_state() -> void:
 		"offers": _claim_state
 	})
 
+func are_claims_enabled() -> bool:
+	return RemoteConfigManager.get_bool("features.offer_claims_enabled", false)
+
 func get_offers() -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
 	var today_key := _get_today_key()
+	var claims_enabled := are_claims_enabled()
 	for offer in _offers:
 		var offer_id := String(offer.get("id", ""))
 		var refresh := String(offer.get("refresh", "once"))
 		var state := (_claim_state.get(offer_id, {}) as Dictionary).duplicate(true)
-		var available := true
-		var status := "available"
+		var available := claims_enabled
+		var status := "beta_locked"
 
-		match refresh:
-			"once":
-				if bool(state.get("claimed_forever", false)):
-					available = false
-					status = "claimed"
-			"daily":
-				if String(state.get("last_claim_day", "")) == today_key:
-					available = false
-					status = "claimed_today"
+		if claims_enabled:
+			status = "available"
+			match refresh:
+				"once":
+					if bool(state.get("claimed_forever", false)):
+						available = false
+						status = "claimed"
+				"daily":
+					if String(state.get("last_claim_day", "")) == today_key:
+						available = false
+						status = "claimed_today"
 
 		result.append({
 			"id": offer_id,
@@ -55,6 +61,8 @@ func get_offers() -> Array[Dictionary]:
 	return result
 
 func get_available_offer_count() -> int:
+	if not are_claims_enabled():
+		return 0
 	var total := 0
 	for offer in get_offers():
 		if bool(offer.get("available", false)):
@@ -62,6 +70,8 @@ func get_available_offer_count() -> int:
 	return total
 
 func claim_offer(offer_id: StringName) -> bool:
+	if not are_claims_enabled():
+		return false
 	for offer in get_offers():
 		if StringName(offer.get("id", "")) != offer_id:
 			continue

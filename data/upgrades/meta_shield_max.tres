@@ -6,7 +6,7 @@
 script = ExtResource("1_8yhs1")
 upgrade_id = "meta_shield_max"
 display_name = "Scudo Basale"
-description = "Aggiunge uno scudo iniziale permanente alle nuove run."
+description = "Aggiunge uno scudo iniziale permanente alle nuove partite."
 layer = "meta"
 category = "defense"
 stat_key = "shield_max"

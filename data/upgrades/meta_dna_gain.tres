@@ -6,7 +6,7 @@
 script = ExtResource("1_tn8py")
 upgrade_id = "meta_dna_gain"
 display_name = "Archivio Genomico"
-description = "Aumenta il DNA base ottenuto a fine run."
+description = "Aumenta il DNA base ottenuto a fine partita."
 layer = "meta"
 category = "utility"
 stat_key = "dna_gain_multiplier"

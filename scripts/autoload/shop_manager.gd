@@ -43,6 +43,15 @@ func save_state() -> void:
 		"shop_state": _shop_state
 	})
 
+func is_rewarded_enabled() -> bool:
+	return RemoteConfigManager.get_bool("features.shop_rewarded_enabled", false)
+
+func are_purchases_enabled() -> bool:
+	return RemoteConfigManager.get_bool("features.shop_purchases_enabled", false)
+
+func are_offer_claims_enabled() -> bool:
+	return RemoteConfigManager.get_bool("features.offer_claims_enabled", false)
+
 func get_dna_packs() -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
 	var claims := (_shop_state.get("iap_test_claims", {}) as Dictionary)
@@ -55,6 +64,9 @@ func get_dna_packs() -> Array[Dictionary]:
 	return result
 
 func purchase_dna_pack(pack_id: StringName) -> bool:
+	if not are_purchases_enabled():
+		return false
+
 	for pack in _DNA_PACKS:
 		if StringName(pack.get("id", "")) != pack_id:
 			continue
@@ -81,15 +93,20 @@ func get_rewarded_video_overview() -> Dictionary:
 	_sync_rewarded_day()
 	var claims_today: int = int(_shop_state.get("rewarded_claims_today", 0))
 	var remaining: int = max(REWARDED_LIMIT_PER_DAY - claims_today, 0)
+	var enabled := is_rewarded_enabled()
 	return {
 		"claims_today": claims_today,
 		"remaining": remaining,
 		"limit": REWARDED_LIMIT_PER_DAY,
 		"reward_amount": REWARDED_DNA_REWARD,
-		"available": remaining > 0
+		"enabled": enabled,
+		"available": enabled and remaining > 0
 	}
 
 func claim_rewarded_video() -> bool:
+	if not is_rewarded_enabled():
+		return false
+
 	_sync_rewarded_day()
 	var claims_today: int = int(_shop_state.get("rewarded_claims_today", 0))
 	if claims_today >= REWARDED_LIMIT_PER_DAY:
@@ -113,6 +130,8 @@ func get_available_flash_offer_count() -> int:
 	return OfferManager.get_available_offer_count()
 
 func claim_flash_offer(offer_id: StringName) -> bool:
+	if not are_offer_claims_enabled():
+		return false
 	var claimed := OfferManager.claim_offer(offer_id)
 	if claimed:
 		shop_changed.emit()
@@ -120,10 +139,13 @@ func claim_flash_offer(offer_id: StringName) -> bool:
 
 func get_shop_summary() -> Dictionary:
 	var rewarded := get_rewarded_video_overview()
+	var rewarded_remaining := int(rewarded.get("remaining", 0)) if is_rewarded_enabled() else 0
+	var rewarded_limit := int(rewarded.get("limit", REWARDED_LIMIT_PER_DAY)) if is_rewarded_enabled() else 0
+	var offers_available := get_available_flash_offer_count() if are_offer_claims_enabled() else 0
 	return {
-		"free_dna_remaining": int(rewarded.get("remaining", 0)),
-		"free_dna_limit": int(rewarded.get("limit", REWARDED_LIMIT_PER_DAY)),
-		"offers_available": get_available_flash_offer_count()
+		"free_dna_remaining": rewarded_remaining,
+		"free_dna_limit": rewarded_limit,
+		"offers_available": offers_available
 	}
 
 func _sync_rewarded_day() -> void:

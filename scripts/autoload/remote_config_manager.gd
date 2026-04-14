@@ -103,6 +103,12 @@ func _get_default_config() -> Dictionary:
 			"dna_boost_charges": 1,
 			"dna_boost_multiplier": 2.0
 		},
+		"features": {
+			"social_links_enabled": false,
+			"shop_rewarded_enabled": false,
+			"shop_purchases_enabled": false,
+			"offer_claims_enabled": false
+		},
 		"battle_pass": {
 			"season_id": "adaptive_response_alpha",
 			"kill_xp": 1,

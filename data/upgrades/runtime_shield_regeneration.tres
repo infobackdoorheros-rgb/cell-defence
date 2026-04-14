@@ -6,7 +6,7 @@
 script = ExtResource("1_zu2pw")
 upgrade_id = "runtime_shield_regeneration"
 display_name = "Ripristino Ionico"
-description = "Rigenera lo scudo nel tempo durante la run."
+description = "Rigenera lo scudo nel tempo durante la partita."
 layer = "runtime"
 category = "defense"
 stat_key = "shield_regeneration"

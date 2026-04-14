@@ -14,6 +14,9 @@ var _scroll_content: VBoxContainer
 var _top_panel: HFlowContainer
 var _hero_showcase: BioShowcase
 var _category_grids: Array[GridContainer] = []
+var _cards: Dictionary = {}
+var _title_labels: Dictionary = {}
+var _body_labels: Dictionary = {}
 var _buttons: Dictionary = {}
 var _data_by_id: Dictionary = {}
 
@@ -178,6 +181,7 @@ func _add_category(parent: VBoxContainer, category: StringName, title: String) -
 	var card_grid := GridContainer.new()
 	card_grid.columns = 2
 	card_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	card_grid.mouse_filter = Control.MOUSE_FILTER_PASS
 	card_grid.add_theme_constant_override("h_separation", 12)
 	card_grid.add_theme_constant_override("v_separation", 12)
 	box.add_child(card_grid)
@@ -185,14 +189,51 @@ func _add_category(parent: VBoxContainer, category: StringName, title: String) -
 
 	for upgrade in ContentDB.get_meta_upgrades_by_category(category):
 		_data_by_id[String(upgrade.upgrade_id)] = upgrade
+		var accent := BioUI.get_category_accent(category)
+		var card := PanelContainer.new()
+		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		card.custom_minimum_size = Vector2(0.0, 152.0)
+		card.mouse_filter = Control.MOUSE_FILTER_PASS
+		BioUI.style_panel(card, Color(0.08, 0.11, 0.16, 0.95), Color(accent.r, accent.g, accent.b, 0.56), 22, 14)
+		card_grid.add_child(card)
+		_cards[String(upgrade.upgrade_id)] = card
+
+		var card_box := VBoxContainer.new()
+		card_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		card_box.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		card_box.mouse_filter = Control.MOUSE_FILTER_PASS
+		card_box.add_theme_constant_override("separation", 8)
+		card.add_child(card_box)
+
+		var title_label := Label.new()
+		title_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		title_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		BioUI.style_heading(title_label, accent.lightened(0.1), 18)
+		card_box.add_child(title_label)
+		_title_labels[String(upgrade.upgrade_id)] = title_label
+
+		var body_label := Label.new()
+		body_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		body_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		body_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		BioUI.style_body(body_label, BioUI.COLOR_TEXT, 14)
+		card_box.add_child(body_label)
+		_body_labels[String(upgrade.upgrade_id)] = body_label
+
+		var footer := HBoxContainer.new()
+		footer.mouse_filter = Control.MOUSE_FILTER_PASS
+		card_box.add_child(footer)
+
+		var spacer := Control.new()
+		spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		footer.add_child(spacer)
+
 		var button := Button.new()
-		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		button.custom_minimum_size = Vector2(0.0, 116.0)
-		BioUI.style_button(button, BioUI.get_category_accent(category), 108.0)
+		button.custom_minimum_size = Vector2(132.0, 48.0)
+		button.focus_mode = Control.FOCUS_NONE
+		BioUI.style_button(button, accent, 48.0)
 		button.pressed.connect(_on_lab_upgrade_pressed.bind(upgrade.upgrade_id))
-		card_grid.add_child(button)
+		footer.add_child(button)
 		_buttons[String(upgrade.upgrade_id)] = button
 
 func _refresh_ui() -> void:
@@ -201,27 +242,34 @@ func _refresh_ui() -> void:
 
 	for key in _buttons.keys():
 		var button := _buttons[key] as Button
+		var title_label := _title_labels[key] as Label
+		var body_label := _body_labels[key] as Label
 		var upgrade := _data_by_id[key] as UpgradeData
 		var level := MetaProgression.get_upgrade_level(upgrade.upgrade_id)
 		var bonus_text := MetaProgression.get_upgrade_bonus_text(upgrade)
+		title_label.text = upgrade.display_name
 
 		if upgrade.is_mutation_unlock():
 			if level >= upgrade.max_level:
-				button.text = "%s   SBLOCCATA\n%s" % [upgrade.display_name, upgrade.description]
+				body_label.text = "SBLOCCATA\n%s" % upgrade.description
+				button.text = "MAX"
 				button.disabled = true
 			else:
 				var unlock_cost := upgrade.get_cost_for_level(level + 1)
-				button.text = "%s   Costo %d DNA\n%s" % [upgrade.display_name, unlock_cost, upgrade.description]
+				body_label.text = "Costo %d DNA\n%s" % [unlock_cost, upgrade.description]
+				button.text = "Sblocca"
 				button.disabled = not MetaProgression.can_purchase(upgrade.upgrade_id)
 			continue
 
 		if level >= upgrade.max_level:
-			button.text = "%s   Lv.%d/%d MAX\n%s\n%s" % [upgrade.display_name, level, upgrade.max_level, upgrade.description, bonus_text]
+			body_label.text = "Lv.%d/%d MAX\n%s\n%s" % [level, upgrade.max_level, upgrade.description, bonus_text]
+			button.text = "MAX"
 			button.disabled = true
 			continue
 
 		var next_cost := upgrade.get_cost_for_level(level + 1)
-		button.text = "%s   Lv.%d/%d   Costo %d DNA\n%s\n%s" % [upgrade.display_name, level, upgrade.max_level, next_cost, upgrade.description, bonus_text]
+		body_label.text = "Lv.%d/%d   Costo %d DNA\n%s\n%s" % [level, upgrade.max_level, next_cost, upgrade.description, bonus_text]
+		button.text = "Compra"
 		button.disabled = not MetaProgression.can_purchase(upgrade.upgrade_id)
 
 func _build_summary_text() -> String:
@@ -266,10 +314,25 @@ func _sync_layout() -> void:
 		grid.columns = 1 if compact else 2
 		grid.custom_minimum_size = Vector2(max(target_width - 36.0, 0.0), 0.0)
 
+	for card_variant in _cards.values():
+		var card := card_variant as PanelContainer
+		if card != null:
+			card.custom_minimum_size.y = 144.0 if compact else 152.0
+
+	for title_variant in _title_labels.values():
+		var title_label := title_variant as Label
+		if title_label != null:
+			title_label.add_theme_font_size_override("font_size", 16 if compact else 18)
+
+	for body_variant in _body_labels.values():
+		var body_label := body_variant as Label
+		if body_label != null:
+			body_label.add_theme_font_size_override("font_size", 13 if compact else 14)
+
 	for button_variant in _buttons.values():
 		var button := button_variant as Button
 		if button != null:
-			button.custom_minimum_size.y = 108.0 if compact else 116.0
+			button.custom_minimum_size = Vector2(120.0 if compact else 132.0, 44.0 if compact else 48.0)
 			button.add_theme_font_size_override("font_size", 14 if compact else 15)
 
 func _get_category_blurb(category: StringName) -> String:

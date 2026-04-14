@@ -101,6 +101,61 @@ func get_google_device_summary() -> Dictionary:
 		"device_code": String(_auth_state.get("google_device_code", ""))
 	}
 
+func get_deletion_summary() -> Dictionary:
+	return {
+		"email": String(_auth_state.get("deletion_pending_email", "")),
+		"provider": String(_auth_state.get("deletion_pending_provider", "")),
+		"requested_at": String(_auth_state.get("deletion_requested_at", ""))
+	}
+
+func can_delete_account() -> bool:
+	return is_authenticated()
+
+func requires_deletion_confirmation_code() -> bool:
+	return can_delete_account() and String(_auth_state.get("provider", "")) != "play_games"
+
+func request_account_deletion() -> Dictionary:
+	if not is_authenticated():
+		return {
+			"ok": false,
+			"message_key": "account.deletion_requires_auth"
+		}
+
+	var provider := String(_auth_state.get("provider", "guest"))
+	if provider == "play_games":
+		return await _delete_play_games_account()
+	if is_remote_backend_enabled():
+		var warmup := await ping_backend()
+		if not bool(warmup.get("ok", false)):
+			return warmup
+		return await _request_email_account_deletion_remote()
+	if not _allow_local_fallback():
+		return {
+			"ok": false,
+			"message_key": "account.backend_not_configured"
+		}
+	return _request_email_account_deletion_local()
+
+func confirm_account_deletion(code: String) -> Dictionary:
+	if not requires_deletion_confirmation_code():
+		return {
+			"ok": false,
+			"message_key": "account.deletion_requires_auth"
+		}
+
+	if is_remote_backend_enabled():
+		var warmup := await ping_backend()
+		if not bool(warmup.get("ok", false)):
+			return warmup
+		return await _confirm_email_account_deletion_remote(code)
+
+	if not _allow_local_fallback():
+		return {
+			"ok": false,
+			"message_key": "account.backend_not_configured"
+		}
+	return _confirm_email_account_deletion_local(code)
+
 func start_play_games_signin() -> Dictionary:
 	if not is_play_games_enabled():
 		return {
@@ -491,6 +546,158 @@ func _verify_backdoor_code_local(code: String) -> Dictionary:
 		"message_key": "account.verified"
 	}
 
+func _request_email_account_deletion_remote() -> Dictionary:
+	var email := String(_auth_state.get("email", "")).strip_edges().to_lower()
+	if not _is_valid_email(email):
+		return {
+			"ok": false,
+			"message_key": "account.deletion_unavailable"
+		}
+
+	var response := await _request_json(HTTPClient.METHOD_POST, "/api/account/delete/email/request", {
+		"displayName": String(_auth_state.get("display_name", "Immune Pilot")),
+		"email": email,
+		"provider": String(_auth_state.get("provider", "backdoor"))
+	})
+	if not bool(response.get("ok", false)):
+		return response
+
+	var payload := response.get("payload", {}) as Dictionary
+	_auth_state["deletion_pending_email"] = email
+	_auth_state["deletion_pending_provider"] = String(_auth_state.get("provider", "backdoor"))
+	_auth_state["deletion_requested_at"] = String(payload.get("requestedAt", Time.get_datetime_string_from_system()))
+	_save_state()
+
+	return {
+		"ok": true,
+		"message_key": String(payload.get("messageKey", "account.deletion_request_sent"))
+	}
+
+func _confirm_email_account_deletion_remote(code: String) -> Dictionary:
+	var safe_code := code.strip_edges()
+	if safe_code.is_empty():
+		return {
+			"ok": false,
+			"message_key": "account.error_code_required"
+		}
+
+	var email := String(_auth_state.get("deletion_pending_email", _auth_state.get("email", ""))).strip_edges().to_lower()
+	if not _is_valid_email(email):
+		return {
+			"ok": false,
+			"message_key": "account.deletion_unavailable"
+		}
+
+	var response := await _request_json(HTTPClient.METHOD_POST, "/api/account/delete/email/confirm", {
+		"email": email,
+		"code": safe_code
+	})
+	if not bool(response.get("ok", false)):
+		return response
+
+	_finalize_account_deletion()
+	var payload := response.get("payload", {}) as Dictionary
+	return {
+		"ok": true,
+		"message_key": String(payload.get("messageKey", "account.deletion_completed"))
+	}
+
+func _request_email_account_deletion_local() -> Dictionary:
+	var email := String(_auth_state.get("email", "")).strip_edges().to_lower()
+	if not _is_valid_email(email):
+		return {
+			"ok": false,
+			"message_key": "account.deletion_unavailable"
+		}
+
+	var verification_code := _generate_code()
+	_auth_state["deletion_pending_email"] = email
+	_auth_state["deletion_pending_provider"] = String(_auth_state.get("provider", "backdoor"))
+	_auth_state["deletion_pending_code"] = verification_code
+	_auth_state["deletion_requested_at"] = Time.get_datetime_string_from_system()
+	_save_state()
+
+	var subject := "Cell Defense Account Deletion"
+	var body := "\n".join([
+		"Cell Defense account deletion request",
+		"",
+		"Display name: %s" % String(_auth_state.get("display_name", "Immune Pilot")),
+		"Player email: %s" % email,
+		"Provider: %s" % String(_auth_state.get("provider", "backdoor")),
+		"Deletion code: %s" % verification_code,
+		"Requested at: %s" % String(_auth_state.get("deletion_requested_at", "")),
+		"",
+		"Use the same code inside the game to confirm account deletion."
+	])
+	OS.shell_open("mailto:%s?subject=%s&body=%s" % [
+		SUPPORT_EMAIL.uri_encode(),
+		subject.uri_encode(),
+		body.uri_encode()
+	])
+
+	return {
+		"ok": true,
+		"message_key": "account.deletion_request_sent"
+	}
+
+func _confirm_email_account_deletion_local(code: String) -> Dictionary:
+	var safe_code := code.strip_edges()
+	if safe_code.is_empty():
+		return {
+			"ok": false,
+			"message_key": "account.error_code_required"
+		}
+	if safe_code != String(_auth_state.get("deletion_pending_code", "")):
+		return {
+			"ok": false,
+			"message_key": "account.deletion_invalid_code"
+		}
+
+	_finalize_account_deletion()
+	return {
+		"ok": true,
+		"message_key": "account.deletion_completed"
+	}
+
+func _delete_play_games_account() -> Dictionary:
+	if not is_play_games_enabled():
+		return {
+			"ok": false,
+			"message_key": "account.play_games_unavailable"
+		}
+	if not is_play_games_runtime_available():
+		return {
+			"ok": false,
+			"message_key": "account.play_games_plugin_missing" if OS.get_name() == "Android" else "account.play_games_android_only"
+		}
+	if not has_play_games_server_client_id():
+		return {
+			"ok": false,
+			"message_key": "account.play_games_missing_server_client_id"
+		}
+
+	var flow_result := await PlayGamesAuthManager.start_authentication(
+		String(_backend_config.get("play_games_server_client_id", "")),
+		bool(_backend_config.get("play_games_force_refresh_token", false))
+	)
+	if not bool(flow_result.get("ok", false)):
+		return flow_result
+
+	var player_profile := flow_result.get("player_profile", {}) as Dictionary
+	var response := await _request_json(HTTPClient.METHOD_POST, "/api/account/delete/playgames", {
+		"serverAuthCode": String(flow_result.get("server_auth_code", "")),
+		"playGamesPlayerId": String(player_profile.get("playGamesPlayerId", ""))
+	})
+	if not bool(response.get("ok", false)):
+		return response
+
+	_finalize_account_deletion()
+	var payload := response.get("payload", {}) as Dictionary
+	return {
+		"ok": true,
+		"message_key": String(payload.get("messageKey", "account.deletion_completed"))
+	}
+
 func _request_json(method: int, endpoint: String, payload: Dictionary = {}) -> Dictionary:
 	var base_url := String(_backend_config.get("base_url", "")).rstrip("/")
 	if base_url.is_empty():
@@ -579,6 +786,10 @@ func _clear_pending_state() -> void:
 	_auth_state["pending_location"] = ""
 	_auth_state["pending_code"] = ""
 	_auth_state["pending_requested_at"] = ""
+	_auth_state["deletion_pending_email"] = ""
+	_auth_state["deletion_pending_provider"] = ""
+	_auth_state["deletion_pending_code"] = ""
+	_auth_state["deletion_requested_at"] = ""
 	_auth_state["google_device_code"] = ""
 	_auth_state["google_user_code"] = ""
 	_auth_state["google_verification_url"] = ""
@@ -597,6 +808,10 @@ func _merge_defaults(data: Dictionary) -> Dictionary:
 		"pending_location": "",
 		"pending_code": "",
 		"pending_requested_at": "",
+		"deletion_pending_email": "",
+		"deletion_pending_provider": "",
+		"deletion_pending_code": "",
+		"deletion_requested_at": "",
 		"google_device_code": "",
 		"google_user_code": "",
 		"google_verification_url": "",
@@ -618,3 +833,15 @@ func _allow_local_fallback() -> bool:
 
 func _is_valid_email(value: String) -> bool:
 	return value.contains("@") and value.contains(".") and value.length() >= 6
+
+func _finalize_account_deletion() -> void:
+	SaveManager.reset_for_account_deletion()
+	MetaProgression.load_profile()
+	RunConfigManager.reset_profile()
+	DailyMissionManager.load_state()
+	SeasonEventManager.load_state()
+	BattlePassManager.load_state()
+	OfferManager.load_state()
+	ShopManager.load_state()
+	AnalyticsManager.load_state()
+	load_state()

@@ -215,8 +215,10 @@ func _refresh_ui(_unused = null) -> void:
 	if selected_archetype != null and selected_chapter != null:
 		_summary_label.text = SettingsManager.t("prep.summary") % [
 			selected_archetype.display_name,
+			selected_archetype.description,
 			selected_archetype.active_skill_name,
 			selected_chapter.display_name,
+			selected_chapter.short_blurb,
 			selected_chapter.dna_multiplier,
 			selected_chapter.atp_multiplier
 		]
@@ -227,6 +229,7 @@ func _refresh_ui(_unused = null) -> void:
 		if button == null or archetype == null:
 			continue
 		button.button_pressed = key == String(RunConfigManager.selected_core_archetype)
+		button.tooltip_text = archetype.active_skill_description
 		button.text = "%s\n%s\nSkill: %s" % [
 			archetype.display_name,
 			archetype.description,
@@ -239,6 +242,7 @@ func _refresh_ui(_unused = null) -> void:
 		if button == null or chapter == null:
 			continue
 		button.button_pressed = key == String(RunConfigManager.selected_chapter)
+		button.tooltip_text = chapter.description
 		button.text = "%s\n%s\nDNA x%.2f | ATP x%.2f" % [
 			chapter.display_name,
 			chapter.short_blurb,

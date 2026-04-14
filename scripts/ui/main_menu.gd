@@ -578,6 +578,9 @@ func _apply_social_button_style(button: Button, accent: Color, status: StringNam
 	var fill := Color(0.08, 0.11, 0.17, 0.94)
 	var border := accent
 	match status:
+		&"disabled":
+			fill = Color(0.08, 0.1, 0.13, 0.82)
+			border = Color(0.45, 0.52, 0.6, 0.46)
 		&"linked":
 			fill = Color(accent.r * 0.22, accent.g * 0.22, accent.b * 0.22, 0.98)
 			border = accent.lightened(0.12)
@@ -587,6 +590,7 @@ func _apply_social_button_style(button: Button, accent: Color, status: StringNam
 	button.add_theme_stylebox_override("normal", _make_button_style(fill, border, 20, 2, 14))
 	button.add_theme_stylebox_override("hover", _make_button_style(fill.lightened(0.06), border.lightened(0.12), 20, 2, 18))
 	button.add_theme_stylebox_override("pressed", _make_button_style(fill.darkened(0.14), border.lightened(0.08), 20, 2, 12))
+	button.add_theme_stylebox_override("disabled", _make_button_style(fill.darkened(0.04), border, 20, 2, 6))
 
 func _update_responsive_layout() -> void:
 	var width := size.x
@@ -837,32 +841,41 @@ func _set_module_content(card_id: StringName, tag_text: String, title_text: Stri
 		button.tooltip_text = tooltip_text
 
 func _refresh_social_hub() -> void:
+	var social_enabled := SocialConnectManager.is_enabled()
 	if _social_summary_label != null:
-		_social_summary_label.text = SettingsManager.t("main.social.summary") % [
-			SocialConnectManager.get_connected_count(),
-			SocialConnectManager.get_provider_ids().size()
-		]
-	if _social_feedback_label != null and _social_feedback_label.text.is_empty():
-		_social_feedback_label.text = SettingsManager.t("main.social.note_compact")
+		if social_enabled:
+			_social_summary_label.text = SettingsManager.t("main.social.summary") % [
+				SocialConnectManager.get_connected_count(),
+				SocialConnectManager.get_provider_ids().size()
+			]
+		else:
+			_social_summary_label.text = SettingsManager.t("main.social.beta_badge")
+	if _social_feedback_label != null and (_social_feedback_label.text.is_empty() or not social_enabled):
+		_social_feedback_label.text = SettingsManager.t("main.social.note_compact") if social_enabled else SettingsManager.t("main.social.beta_note")
 
 	for provider_id in SocialConnectManager.get_provider_ids():
 		var button := _social_buttons.get(String(provider_id)) as Button
 		if button == null:
 			continue
 		var info: Dictionary = SocialConnectManager.get_provider_info(provider_id)
-		var status := SocialConnectManager.get_status(provider_id)
+		var status: StringName = &"disabled" if not social_enabled else SocialConnectManager.get_status(provider_id)
 		var accent: Color = info.get("accent", Color(0.46, 0.82, 1.0, 1.0))
 		_apply_social_button_style(button, accent, status)
+		button.disabled = not social_enabled
 
 		var short_name := _get_provider_short_name(provider_id)
-		match status:
-			&"pending":
-				button.text = "%s ?" % short_name
-			&"linked":
-				button.text = "%s OK" % short_name
-			_:
-				button.text = "%s +" % short_name
-		button.tooltip_text = String(info.get("display_name", provider_id))
+		if not social_enabled:
+			button.text = short_name
+			button.tooltip_text = SettingsManager.t("main.social.beta_note")
+		else:
+			match status:
+				&"pending":
+					button.text = "%s ?" % short_name
+				&"linked":
+					button.text = "%s OK" % short_name
+				_:
+					button.text = "%s +" % short_name
+			button.tooltip_text = String(info.get("display_name", provider_id))
 
 func _refresh_account_state() -> void:
 	if _account_button != null:
@@ -891,6 +904,9 @@ func _get_provider_short_name(provider_id: StringName) -> String:
 			return String(provider_id).to_upper()
 
 func _on_social_button_pressed(provider_id: StringName) -> void:
+	if not SocialConnectManager.is_enabled():
+		_social_feedback_label.text = SettingsManager.t("main.social.beta_note")
+		return
 	var status := SocialConnectManager.cycle_connection(provider_id)
 	var provider_name := String(SocialConnectManager.get_provider_info(provider_id).get("display_name", provider_id))
 	match status:

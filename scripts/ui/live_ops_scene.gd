@@ -259,6 +259,7 @@ func _refresh_offers() -> void:
 	for child in _offers_flow.get_children():
 		child.queue_free()
 
+	var offers_enabled := OfferManager.are_claims_enabled()
 	for offer in OfferManager.get_offers():
 		var card := PanelContainer.new()
 		card.custom_minimum_size = Vector2(244.0, 182.0)
@@ -277,6 +278,8 @@ func _refresh_offers() -> void:
 
 		var description := Label.new()
 		description.text = "%s\n+%d" % [String(offer.get("description", "")), int(offer.get("reward_amount", 0))]
+		if not offers_enabled:
+			description.text += "\n%s" % SettingsManager.t("ops.offers_locked")
 		description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		BioUI.style_body(description, BioUI.COLOR_TEXT, 15)
 		box.add_child(description)
@@ -284,11 +287,11 @@ func _refresh_offers() -> void:
 		var button := Button.new()
 		BioUI.style_button(button, Color(1.0, 0.74, 0.38, 1.0), 58.0)
 		var offer_id := StringName(offer.get("id", ""))
-		if bool(offer.get("available", false)):
+		if offers_enabled and bool(offer.get("available", false)):
 			button.text = SettingsManager.t("common.claim_reward")
 			button.pressed.connect(_on_claim_offer.bind(offer_id))
 		else:
-			button.text = SettingsManager.t("common.claimed")
+			button.text = SettingsManager.t("common.coming_soon") if not offers_enabled else SettingsManager.t("common.claimed")
 			button.disabled = true
 		box.add_child(button)
 

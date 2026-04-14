@@ -45,6 +45,9 @@ func get_provider_ids() -> Array[StringName]:
 		result.append(provider_id)
 	return result
 
+func is_enabled() -> bool:
+	return RemoteConfigManager.get_bool("features.social_links_enabled", false)
+
 func get_provider_info(provider_id: StringName) -> Dictionary:
 	return (PROVIDERS.get(provider_id, {}) as Dictionary).duplicate(true)
 
@@ -52,6 +55,8 @@ func get_status(provider_id: StringName) -> StringName:
 	return StringName(_connections.get(String(provider_id), "unlinked"))
 
 func get_connected_count() -> int:
+	if not is_enabled():
+		return 0
 	var total: int = 0
 	for provider_id in PROVIDERS.keys():
 		if get_status(provider_id) == &"linked":
@@ -59,6 +64,8 @@ func get_connected_count() -> int:
 	return total
 
 func cycle_connection(provider_id: StringName) -> StringName:
+	if not is_enabled():
+		return &"disabled"
 	var status := get_status(provider_id)
 	match status:
 		&"unlinked":
@@ -75,6 +82,8 @@ func cycle_connection(provider_id: StringName) -> StringName:
 			return &"pending"
 
 func request_link(provider_id: StringName) -> void:
+	if not is_enabled():
+		return
 	var info := get_provider_info(provider_id)
 	if info.is_empty():
 		return
@@ -83,10 +92,14 @@ func request_link(provider_id: StringName) -> void:
 	_save_connections()
 
 func confirm_link(provider_id: StringName) -> void:
+	if not is_enabled():
+		return
 	_connections[String(provider_id)] = "linked"
 	_save_connections()
 
 func unlink(provider_id: StringName) -> void:
+	if not is_enabled():
+		return
 	_connections[String(provider_id)] = "unlinked"
 	_save_connections()
 
