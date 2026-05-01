@@ -53,6 +53,8 @@ services:
         sync: false
       - key: PLAY_GAMES_SERVER_CLIENT_SECRET
         sync: false
+      - key: ADMIN_API_TOKEN
+        sync: false
       - key: DEV_EXPOSE_CODES
         value: "false"
       - key: BACKDOOR_MAX_VERIFY_ATTEMPTS
@@ -61,6 +63,8 @@ services:
         value: "60000"
       - key: STORE_INIT_RETRY_MS
         value: "15000"
+      - key: TELEMETRY_DIGEST_ENABLED
+        value: "true"
 
 databases:
   - name: cell-defense-auth-db

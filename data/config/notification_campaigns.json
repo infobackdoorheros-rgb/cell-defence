@@ -1,0 +1,26 @@
+{
+	"channel_id": "cell_defense_reengage",
+	"campaigns": [
+		{
+			"id": "reengage_short",
+			"enabled": true,
+			"delay_seconds": 28800,
+			"title_key": "notify.title",
+			"body_key": "notify.body.short"
+		},
+		{
+			"id": "reengage_daily",
+			"enabled": true,
+			"delay_seconds": 86400,
+			"title_key": "notify.title",
+			"body_key": "notify.body.daily"
+		},
+		{
+			"id": "reengage_long",
+			"enabled": true,
+			"delay_seconds": 259200,
+			"title_key": "notify.title",
+			"body_key": "notify.body.long"
+		}
+	]
+}

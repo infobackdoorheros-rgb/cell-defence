@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cell Defence Control Center</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-chip">BACKDOOR HEROES</div>
+          <h1>Cell Defence<br />Control Center</h1>
+          <p>Console Windows per monitorare, bilanciare e governare il gioco.</p>
+        </div>
+        <nav class="sidebar-nav">
+          <a href="#dashboard">Dashboard</a>
+          <a href="#connection">Connessione</a>
+          <a href="#remote-config">Remote Config</a>
+          <a href="#season-config">Season Ops</a>
+          <a href="#notification-config">Notification Ops</a>
+        </nav>
+        <div class="sidebar-note">
+          <strong>Uso consigliato</strong>
+          <p>1. Collega Render con il token admin.</p>
+          <p>2. Controlla health e leaderboard.</p>
+          <p>3. Modifica config live e prepara la prossima build.</p>
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="hero">
+          <div>
+            <div class="hero-chip">IMMUNE LIVE OPERATIONS</div>
+            <h2>Regia tecnica e contenutistica di Cell Defence</h2>
+            <p>
+              Un unico pannello per backend health, analytics, leaderboard, stagione live,
+              notifiche di rientro e tuning dei file di configurazione del progetto.
+            </p>
+          </div>
+          <div class="hero-actions">
+            <button id="refreshAllButton" class="button primary">Aggiorna tutto</button>
+            <button id="sendDigestButton" class="button ghost">Invia digest ieri</button>
+          </div>
+        </header>
+
+        <section id="statusBar" class="status-bar"></section>
+
+        <section id="dashboard" class="panel">
+          <div class="panel-header">
+            <div>
+              <span class="eyebrow">Dashboard</span>
+              <h3>Backend, leaderboard e telemetria</h3>
+            </div>
+            <span id="lastRefreshLabel" class="muted">In attesa di dati</span>
+          </div>
+
+          <div id="healthCards" class="metric-grid"></div>
+
+          <div class="split-grid">
+            <div class="subpanel">
+              <div class="subpanel-header">
+                <h4>Telemetria Oggi</h4>
+                <span id="todayKeyLabel" class="muted"></span>
+              </div>
+              <div id="todayTelemetry" class="telemetry-grid"></div>
+              <div class="insight-grid">
+                <div>
+                  <h5>Loadout ricorrenti</h5>
+                  <ul id="todayLoadouts" class="list"></ul>
+                </div>
+                <div>
+                  <h5>Upgrade dominanti</h5>
+                  <ul id="todayUpgrades" class="list"></ul>
+                </div>
+              </div>
+            </div>
+            <div class="subpanel">
+              <div class="subpanel-header">
+                <h4>Telemetria Ieri</h4>
+                <span id="yesterdayKeyLabel" class="muted"></span>
+              </div>
+              <div id="yesterdayTelemetry" class="telemetry-grid"></div>
+              <div class="insight-grid">
+                <div>
+                  <h5>Loadout ricorrenti</h5>
+                  <ul id="yesterdayLoadouts" class="list"></ul>
+                </div>
+                <div>
+                  <h5>Upgrade dominanti</h5>
+                  <ul id="yesterdayUpgrades" class="list"></ul>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="split-grid">
+            <div class="subpanel">
+              <div class="subpanel-header">
+                <h4>Classifica Daily</h4>
+                <span id="dailyMeta" class="muted"></span>
+              </div>
+              <div id="dailyLeaderboard" class="leaderboard-table"></div>
+            </div>
+            <div class="subpanel">
+              <div class="subpanel-header">
+                <h4>Classifica Weekly</h4>
+                <span id="weeklyMeta" class="muted"></span>
+              </div>
+              <div id="weeklyLeaderboard" class="leaderboard-table"></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="connection" class="panel">
+          <div class="panel-header">
+            <div>
+              <span class="eyebrow">Connessione</span>
+              <h3>Backend Render e token admin</h3>
+            </div>
+          </div>
+
+          <form id="settingsForm" class="form-grid">
+            <label>
+              Backend URL
+              <input id="backendUrlInput" name="backendUrl" type="url" />
+            </label>
+            <label>
+              Admin API Token
+              <input id="adminTokenInput" name="adminApiToken" type="password" />
+            </label>
+            <label>
+              Timeout richieste (ms)
+              <input id="requestTimeoutInput" name="requestTimeoutMs" type="number" min="2000" step="500" />
+            </label>
+            <div class="form-actions">
+              <button type="submit" class="button primary">Salva impostazioni</button>
+            </div>
+          </form>
+
+          <div class="path-grid">
+            <div>
+              <strong>Local settings</strong>
+              <p id="settingsPathLabel" class="mono muted"></p>
+            </div>
+            <div>
+              <strong>Remote config</strong>
+              <p id="remotePathLabel" class="mono muted"></p>
+            </div>
+            <div>
+              <strong>Season config</strong>
+              <p id="seasonPathLabel" class="mono muted"></p>
+            </div>
+            <div>
+              <strong>Notification config</strong>
+              <p id="notificationPathLabel" class="mono muted"></p>
+            </div>
+          </div>
+        </section>
+
+        <section id="remote-config" class="panel">
+          <div class="panel-header">
+            <div>
+              <span class="eyebrow">Live Balance</span>
+              <h3>Remote Config</h3>
+            </div>
+            <button id="saveRemoteConfigButton" class="button primary">Salva Remote Config</button>
+          </div>
+          <div id="remoteSummary" class="summary-grid"></div>
+          <textarea id="remoteConfigEditor" class="json-editor" spellcheck="false"></textarea>
+        </section>
+
+        <section id="season-config" class="panel">
+          <div class="panel-header">
+            <div>
+              <span class="eyebrow">Season Ops</span>
+              <h3>Stagione evento e obiettivi</h3>
+            </div>
+            <button id="saveSeasonConfigButton" class="button primary">Salva Season Config</button>
+          </div>
+          <div id="seasonSummary" class="summary-grid"></div>
+          <textarea id="seasonConfigEditor" class="json-editor" spellcheck="false"></textarea>
+        </section>
+
+        <section id="notification-config" class="panel">
+          <div class="panel-header">
+            <div>
+              <span class="eyebrow">Notification Ops</span>
+              <h3>Campagne di rientro</h3>
+            </div>
+            <button id="saveNotificationConfigButton" class="button primary">Salva Notification Config</button>
+          </div>
+          <div id="notificationSummary" class="summary-grid"></div>
+          <textarea id="notificationConfigEditor" class="json-editor" spellcheck="false"></textarea>
+        </section>
+      </main>
+    </div>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

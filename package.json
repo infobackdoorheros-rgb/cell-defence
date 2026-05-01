@@ -3,11 +3,13 @@
   "version": "0.3.2",
   "private": true,
   "workspaces": [
-    "backend"
+    "backend",
+    "control-center"
   ],
   "scripts": {
     "start": "npm --workspace backend start",
-    "dev:auth": "npm --workspace backend run dev"
+    "dev:auth": "npm --workspace backend run dev",
+    "dev:control-center": "npm --workspace control-center start"
   },
   "engines": {
     "node": "22.x"

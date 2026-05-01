@@ -1,4 +1,9 @@
 /signing/*.jks
+!/signing/.gitkeep
+/*.jks
+/*.keystore
+*.keystore
+/keystore.properties
 /docs/release_signing_info.md
 /dist/android/*.idsig
 /dist/
@@ -17,3 +22,4 @@
 /backend/node_modules/
 /backend/.env
 /backend/data/auth-store.json
+/control-center/config.local.json

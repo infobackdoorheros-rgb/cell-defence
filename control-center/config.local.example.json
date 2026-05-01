@@ -1,0 +1,5 @@
+{
+  "backendUrl": "https://cell-defense-auth-backend.onrender.com",
+  "adminApiToken": "",
+  "requestTimeoutMs": 15000
+}
