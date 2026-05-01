@@ -49,6 +49,25 @@ export function createEmailProvider({ supportEmail }) {
   const useSmtp = emailProvider === "smtp" || (!useResend && Boolean(smtpTransporter));
   const defaultFrom = resendFrom || process.env.SMTP_FROM || supportEmail;
 
+  async function sendPlainTextEmail({ to, subject, text }) {
+    if (useResend) {
+      await sendViaResend({
+        from: defaultFrom,
+        to,
+        subject,
+        text
+      });
+      return;
+    }
+
+    await smtpTransporter.sendMail({
+      from: defaultFrom,
+      to,
+      subject,
+      text
+    });
+  }
+
   return {
     isConfigured() {
       if (useResend) {
@@ -95,31 +114,12 @@ export function createEmailProvider({ supportEmail }) {
         "If you did not request this registration, ignore this email."
       ].join("\n");
 
-      if (useResend) {
-        await sendViaResend({
-          from: defaultFrom,
-          to: supportEmail,
-          subject: "Cell Defense BackDoor Heroes registration request",
-          text: supportMessage
-        });
-        await sendViaResend({
-          from: defaultFrom,
-          to: email,
-          subject: "BackDoor Heroes verification code",
-          text: playerMessage
-        });
-        return;
-      }
-
-      await smtpTransporter.sendMail({
-        from: defaultFrom,
+      await sendPlainTextEmail({
         to: supportEmail,
         subject: "Cell Defense BackDoor Heroes registration request",
         text: supportMessage
       });
-
-      await smtpTransporter.sendMail({
-        from: defaultFrom,
+      await sendPlainTextEmail({
         to: email,
         subject: "BackDoor Heroes verification code",
         text: playerMessage
@@ -151,34 +151,32 @@ export function createEmailProvider({ supportEmail }) {
         "If you did not request account deletion, ignore this email."
       ].join("\n");
 
-      if (useResend) {
-        await sendViaResend({
-          from: defaultFrom,
-          to: supportEmail,
-          subject: "Cell Defense account deletion request",
-          text: supportMessage
-        });
-        await sendViaResend({
-          from: defaultFrom,
-          to: email,
-          subject: "Cell Defense account deletion code",
-          text: playerMessage
-        });
-        return;
-      }
-
-      await smtpTransporter.sendMail({
-        from: defaultFrom,
+      await sendPlainTextEmail({
         to: supportEmail,
         subject: "Cell Defense account deletion request",
         text: supportMessage
       });
-
-      await smtpTransporter.sendMail({
-        from: defaultFrom,
+      await sendPlainTextEmail({
         to: email,
         subject: "Cell Defense account deletion code",
         text: playerMessage
+      });
+    },
+    async sendTelemetryDigestEmail({ date, summaryLines }) {
+      if (!this.isConfigured()) {
+        throw new Error("EMAIL_PROVIDER_NOT_CONFIGURED");
+      }
+      const digestText = [
+        "Cell Defense gameplay telemetry digest",
+        "",
+        `UTC day: ${date}`,
+        "",
+        ...summaryLines
+      ].join("\n");
+      await sendPlainTextEmail({
+        to: supportEmail,
+        subject: `Cell Defense telemetry digest ${date}`,
+        text: digestText
       });
     }
   };
